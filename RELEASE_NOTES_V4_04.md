@@ -1,5 +1,7 @@
 # Gewitterradar V4.04 — HACS package staging
 
+> **Repository rename note (2026-09-06):** this Dashboard repository is now `TheDaimos/gewitterradar-dashboard`. Current HACS Dashboard installations use `/config/www/community/gewitterradar-dashboard/` and `/hacsfiles/gewitterradar-dashboard/`. The V4.04 release notes below preserve the original release-time path for historical traceability. Use the current installation documentation for the renamed repository.
+
 Gewitterradar V4.04 builds on the working V4.03 HACS distribution and simplifies the only remaining manual installation step.
 
 V4.03 established the correct HACS layout by publishing **zero custom GitHub release assets**, which forces current HACS to install the tagged `dist/` tree. V4.04 keeps that mechanism unchanged and adds the Home Assistant helper package directly to that tree as `dist/app_gewitterradar_pkg.yaml`.

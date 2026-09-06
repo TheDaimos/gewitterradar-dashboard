@@ -1,5 +1,7 @@
 # HACS packaging note — V4.04 package staging
 
+> **Repository rename note (2026-09-06):** the Dashboard repository is now `TheDaimos/gewitterradar-dashboard`. Current HACS Dashboard installations use `/config/www/community/gewitterradar-dashboard/` and `/hacsfiles/gewitterradar-dashboard/`. The V4.04 packaging description below preserves the original release-time repository path for historical traceability. Use [`INSTALLATION_DE.md`](INSTALLATION_DE.md), [`INSTALLATION_EN.md`](INSTALLATION_EN.md) and [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md) for current installation paths.
+
 V4.04 preserves the V4.03 HACS rule that the GitHub release must contain **zero custom release assets**. This is required because current HACS prioritizes custom release assets before the tagged repository `dist/` tree.
 
 ## V4.04 dist layout

@@ -6,22 +6,42 @@
 - Blitzortung.org integration providing the required lightning/counter entities.
 - Default counter used by the example: `sensor.home_lightning_counter`.
 
+## Repository split since 2026-09-06
+
+Public distribution is now clearly separated:
+
+- **Native Home Assistant Integration:** `TheDaimos/gewitterradar`
+- **Dashboard/Card:** `TheDaimos/gewitterradar-dashboard`
+
+The Dashboard repository was only renamed. The frozen V4.04 application state, card, assets and helper logic remain unchanged.
+
+HACS derives the local Dashboard directory and `/hacsfiles/` namespace from the current repository name. The renamed Dashboard therefore now uses:
+
+```text
+/config/www/community/gewitterradar-dashboard/
+/hacsfiles/gewitterradar-dashboard/
+```
+
+For an installation created before the repository rename, first refresh HACS and **Redownload** Gewitterradar once. Then check **Settings → Dashboards → Resources** for an old resource using `/hacsfiles/gewitterradar/`. Remove the old resource only after the new `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` resource loads successfully. If Lovelace resources are managed in YAML, update the resource URL manually.
+
+See [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md) for additional details.
+
 ## HACS update channel
 
 For normal installation and future updates, use the default **newest / Latest** version offered by HACS. This is currently V4.04. Select a fixed older version only for an intentional rollback or a specific compatibility requirement. HACS regularly refreshes repository metadata and can offer newer stable Gewitterradar releases as updates.
 
 ## Option A: Install through HACS
 
-1. Add `TheDaimos/gewitterradar` to HACS as a custom **Dashboard** repository.
+1. Add `TheDaimos/gewitterradar-dashboard` to HACS as a custom **Dashboard** repository.
 2. Install the default **Latest / newest version**, or use **Redownload** when upgrading. Latest currently resolves to V4.04.
-3. HACS installs `gewitterradar.js`, the complete `assets/` directory and `app_gewitterradar_pkg.yaml` under `/config/www/community/gewitterradar/`.
+3. HACS installs `gewitterradar.js`, the complete `assets/` directory and `app_gewitterradar_pkg.yaml` under `/config/www/community/gewitterradar-dashboard/`.
 4. Manually copy or move `app_gewitterradar_pkg.yaml` to `/config/packages/app_gewitterradar_pkg.yaml`.
 5. Perform a full Home Assistant restart.
 
 After the HACS installation, the directory must contain at least:
 
 ```text
-/config/www/community/gewitterradar/
+/config/www/community/gewitterradar-dashboard/
 ├── app_gewitterradar_pkg.yaml
 ├── gewitterradar.js
 └── assets/
@@ -31,10 +51,10 @@ After the HACS installation, the directory must contain at least:
     └── gewitterradar-trend-medallion.png
 ```
 
-Home Assistant exposes the dashboard files through `/hacsfiles/gewitterradar/`. If Lovelace resources are managed in YAML, use:
+Home Assistant exposes the dashboard files through `/hacsfiles/gewitterradar-dashboard/`. If Lovelace resources are managed in YAML, use:
 
 ```text
-/hacsfiles/gewitterradar/gewitterradar.js
+/hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
 ### Why is the package copy/move still manual?
@@ -42,7 +62,7 @@ Home Assistant exposes the dashboard files through `/hacsfiles/gewitterradar/`. 
 This final step cannot be automated by this HACS repository. Gewitterradar is installed as a **Dashboard repository**. HACS installs the repository inside its own directory:
 
 ```text
-/config/www/community/gewitterradar/
+/config/www/community/gewitterradar-dashboard/
 ```
 
 It does not deploy Home Assistant configuration files into:
@@ -54,7 +74,7 @@ It does not deploy Home Assistant configuration files into:
 V4.04 therefore solves the practical part: HACS already downloads the required package locally. The user no longer needs to find or download a separate file from GitHub and only has to copy or move:
 
 ```text
-/config/www/community/gewitterradar/app_gewitterradar_pkg.yaml
+/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml
 ```
 
 to:
@@ -155,8 +175,9 @@ The Recorder exclusion prevents long-term storage of these entities without disa
 ## 6. First smoke test
 
 - The card loads and displays `V4.04`.
-- `/config/www/community/gewitterradar/` contains `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and the `assets/` directory.
+- `/config/www/community/gewitterradar-dashboard/` contains `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and the `assets/` directory.
 - All four PNG files are present under `assets/`.
+- The Lovelace resource points to `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`, or to the configured `/local/` path for a manual installation.
 - `/config/packages/app_gewitterradar_pkg.yaml` exists and Home Assistant was restarted afterwards.
 - The `lightning_detection_*` helpers are available.
 - The Blitzortung.org source-status LED is plausible.
