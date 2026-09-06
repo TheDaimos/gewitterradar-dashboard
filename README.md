@@ -70,7 +70,7 @@ to
 
 and restart Home Assistant. This cannot be automated by the HACS Dashboard installation because HACS installs this repository only inside its own `/config/www/community/gewitterradar-dashboard/` directory and does not deploy configuration files into `/config/packages/`.
 
-Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) before removing any old entry.
+Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. **Do not Update or Redownload the stale old HACS Dashboard entry `TheDaimos/gewitterradar`**, because that repository name now belongs to the native Integration. Add and verify `TheDaimos/gewitterradar-dashboard` first, then clean up the stale old Dashboard entry/resource. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) for the safe order.
 
 The canonical package source remains `home-assistant/app_gewitterradar_pkg.yaml`; V4.04 places a byte-identical convenience copy at `dist/app_gewitterradar_pkg.yaml` so HACS delivers it together with the card.
 
