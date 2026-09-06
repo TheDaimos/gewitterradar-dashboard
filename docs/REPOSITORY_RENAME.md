@@ -12,6 +12,16 @@ TheDaimos/gewitterradar-dashboard
 
 The Dashboard repository was previously named `TheDaimos/gewitterradar`. Its repository identity and V4.04 release history were preserved by the GitHub rename, but the old repository name was subsequently reused for the native Integration. Do not use the old Dashboard repository URL for new Dashboard installations.
 
+## Important HACS rename collision
+
+This is not a normal repository rename from HACS's point of view.
+
+The old Dashboard repository name `TheDaimos/gewitterradar` now points to a different, valid repository: the native Home Assistant Integration. A stale HACS Dashboard entry that still uses the old repository name can therefore no longer be relied on to discover the Dashboard rename automatically.
+
+**Do not use Update or Redownload on a stale pre-rename Dashboard entry that still identifies itself as `TheDaimos/gewitterradar`.** Doing so can make HACS inspect the new native Integration repository instead of the renamed Dashboard repository.
+
+The safe migration is to install the renamed Dashboard repository under its new name first, verify the new resource, and only then remove the stale old Dashboard entry/resource.
+
 ## Current HACS Dashboard repository
 
 Add this repository to HACS as a custom repository of type **Dashboard**:
@@ -50,19 +60,23 @@ The previous Dashboard path was:
 
 That old `/hacsfiles/gewitterradar/` namespace must no longer be treated as the canonical Dashboard path because `TheDaimos/gewitterradar` is now the native Integration repository.
 
-## Existing HACS installations
+## Existing HACS installations created before the rename
 
-For a Dashboard installation created before the rename:
+Use this order for an existing Dashboard installation that was created while the Dashboard repository was still named `TheDaimos/gewitterradar`:
 
-1. Refresh HACS metadata.
-2. Confirm that the Dashboard repository resolves to `TheDaimos/gewitterradar-dashboard`.
-3. Use **Redownload** for the installed Gewitterradar Dashboard once.
-4. Confirm that `/config/www/community/gewitterradar-dashboard/` contains `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and `assets/`.
-5. In Home Assistant resource-storage mode, check **Settings → Dashboards → Resources** and confirm that the active resource uses `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
-6. If the old `/hacsfiles/gewitterradar/gewitterradar.js` resource is still present, remove that old resource only after the new resource has been confirmed working.
-7. If Lovelace resources are managed in YAML, update the resource URL manually to `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+1. **Do not Update or Redownload the stale old Dashboard entry.**
+2. Add `https://github.com/TheDaimos/gewitterradar-dashboard` to HACS as a new custom repository of type **Dashboard**.
+3. Install the Dashboard from this new repository. For the current stable line, use the default Latest version, V4.04.
+4. Confirm that `/config/www/community/gewitterradar-dashboard/` contains at least `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and `assets/`.
+5. In Home Assistant resource-storage mode, check **Settings → Dashboards → Resources** and confirm that the active module resource uses `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+6. If Lovelace resources are managed in YAML, update the resource URL manually to `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+7. Reload the Dashboard/browser or Companion App and verify that Gewitterradar loads correctly from the new resource path.
+8. Only after the new Dashboard installation has been confirmed working, remove the stale old Dashboard repository entry/resource that still refers to `/hacsfiles/gewitterradar/`.
+9. A stale local directory `/config/www/community/gewitterradar/` may remain. Remove it only after the new Dashboard path has been verified and only if it is no longer required by any other manually maintained resource.
 
-A stale old local directory may remain after the repository rename. Do not use its presence as proof that the current Dashboard resource is correct; verify the active resource URL and the new HACS directory first.
+The already installed Home Assistant package at `/config/packages/app_gewitterradar_pkg.yaml` is not renamed by this repository migration. If it is already the expected V4.04 package, it can remain in place.
+
+If HACS does not allow the renamed Dashboard repository to be added while the stale old custom-repository registration exists, remove only that stale HACS custom-repository registration first. Do not use Redownload on it. Then add `TheDaimos/gewitterradar-dashboard` and continue with the verification steps above.
 
 ## V4.04 remains frozen
 
