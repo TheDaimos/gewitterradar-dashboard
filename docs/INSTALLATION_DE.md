@@ -22,9 +22,9 @@ HACS leitet den lokalen Dashboard-Pfad und den `/hacsfiles/`-Namensraum aus dem 
 /hacsfiles/gewitterradar-dashboard/
 ```
 
-Bei einer bereits vor der Umbenennung installierten Version zuerst HACS aktualisieren/neu laden und Gewitterradar einmal **neu herunterladen**. Anschließend unter **Einstellungen → Dashboards → Ressourcen** prüfen, ob noch eine alte Ressource mit `/hacsfiles/gewitterradar/` vorhanden ist. Die alte Ressource erst entfernen, nachdem die neue Ressource `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` erfolgreich lädt. Bei YAML-verwalteten Lovelace-Ressourcen muss die URL manuell angepasst werden.
+**Wichtig für Installationen von vor der Umbenennung:** Den alten HACS-Dashboard-Eintrag `TheDaimos/gewitterradar` nicht aktualisieren und nicht neu herunterladen. Dieser Repository-Name wird inzwischen von der neuen nativen Home-Assistant-Integration verwendet. Stattdessen `TheDaimos/gewitterradar-dashboard` als neues benutzerdefiniertes **Dashboard**-Repository hinzufügen, V4.04 dort installieren und zuerst die neue Ressource `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` erfolgreich prüfen. Erst danach den alten Dashboard-Eintrag bzw. die alte Ressource `/hacsfiles/gewitterradar/` entfernen. Bei YAML-verwalteten Lovelace-Ressourcen muss die URL manuell angepasst werden.
 
-Weitere Hinweise stehen in [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
+Die vollständige sichere Reihenfolge steht in [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
 
 ## HACS-Updatekanal
 

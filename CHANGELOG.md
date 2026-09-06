@@ -1,5 +1,7 @@
 # Changelog
 
+> **Current repository note (2026-09-06):** The Dashboard repository was renamed from `TheDaimos/gewitterradar` to `TheDaimos/gewitterradar-dashboard`, while the old repository name was reused for the new native Home Assistant Integration. Current HACS Dashboard installations therefore use `/config/www/community/gewitterradar-dashboard/` and `/hacsfiles/gewitterradar-dashboard/`. Existing pre-rename HACS Dashboard entries must not be updated or redownloaded under the stale old repository name; follow [`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md) for the safe migration order. The frozen V4.04 application artifacts themselves remain unchanged.
+
 > **Distribution status:** V4.00, V4.01 and V4.02 are no longer published as installable HACS releases. V4.00 was a valid first stable/manual baseline but its GitHub release used a ZIP asset layout that is not safe for the current HACS Dashboard download path. V4.01 and V4.02 were withdrawn after real HACS installation tests showed incomplete deployments. Their public GitHub releases/tags were removed; the V4.01/V4.02 versioned card source and release-note files were also removed from `main`. The historical entries remain here only for traceability. V4.03 is the first working HACS distribution; V4.04 is the current recommended release.
 
 ## V4.04 — HACS package staging

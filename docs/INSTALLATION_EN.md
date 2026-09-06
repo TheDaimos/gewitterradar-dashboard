@@ -22,9 +22,9 @@ HACS derives the local Dashboard directory and `/hacsfiles/` namespace from the 
 /hacsfiles/gewitterradar-dashboard/
 ```
 
-For an installation created before the repository rename, first refresh HACS and **Redownload** Gewitterradar once. Then check **Settings → Dashboards → Resources** for an old resource using `/hacsfiles/gewitterradar/`. Remove the old resource only after the new `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` resource loads successfully. If Lovelace resources are managed in YAML, update the resource URL manually.
+**Important for installations created before the rename:** Do not update or redownload the old HACS Dashboard entry `TheDaimos/gewitterradar`. That repository name is now used by the new native Home Assistant Integration. Instead, add `TheDaimos/gewitterradar-dashboard` as a new custom **Dashboard** repository, install V4.04 from it, and first verify that `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` loads successfully. Only then remove the stale old Dashboard entry/resource that still uses `/hacsfiles/gewitterradar/`. If Lovelace resources are managed in YAML, update the resource URL manually.
 
-See [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md) for additional details.
+See [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md) for the complete safe migration order.
 
 ## HACS update channel
 
