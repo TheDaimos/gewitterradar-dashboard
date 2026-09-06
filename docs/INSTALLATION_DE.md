@@ -6,22 +6,42 @@
 - Blitzortung.org-Integration mit den benötigten Blitz-/Zählerentitäten.
 - Standard-Zähler der Beispielkonfiguration: `sensor.home_lightning_counter`.
 
+## Repository-Aufteilung seit 2026-09-06
+
+Die öffentliche Verteilung ist jetzt klar getrennt:
+
+- **Native Home-Assistant-Integration:** `TheDaimos/gewitterradar`
+- **Dashboard/Card:** `TheDaimos/gewitterradar-dashboard`
+
+Das Dashboard-Repository wurde lediglich umbenannt. Der eingefrorene V4.04-Anwendungsstand, die Karte, Assets und Helper-Logik bleiben unverändert.
+
+HACS leitet den lokalen Dashboard-Pfad und den `/hacsfiles/`-Namensraum aus dem aktuellen Repository-Namen ab. Für das umbenannte Dashboard gelten daher jetzt:
+
+```text
+/config/www/community/gewitterradar-dashboard/
+/hacsfiles/gewitterradar-dashboard/
+```
+
+Bei einer bereits vor der Umbenennung installierten Version zuerst HACS aktualisieren/neu laden und Gewitterradar einmal **neu herunterladen**. Anschließend unter **Einstellungen → Dashboards → Ressourcen** prüfen, ob noch eine alte Ressource mit `/hacsfiles/gewitterradar/` vorhanden ist. Die alte Ressource erst entfernen, nachdem die neue Ressource `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` erfolgreich lädt. Bei YAML-verwalteten Lovelace-Ressourcen muss die URL manuell angepasst werden.
+
+Weitere Hinweise stehen in [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
+
 ## HACS-Updatekanal
 
 Für die normale Installation und spätere Aktualisierungen soll in HACS die standardmäßig angebotene **neueste / Latest-Version** verwendet werden. Aktuell ist dies V4.04. Eine feste ältere Version sollte nur bewusst für einen Rückschritt oder eine besondere Kompatibilitätsanforderung gewählt werden. HACS prüft die Repository-Metadaten regelmäßig und kann neue stabile Gewitterradar-Releases dadurch als Update anbieten.
 
 ## Variante A: Installation über HACS
 
-1. In HACS `TheDaimos/gewitterradar` als benutzerdefiniertes Repository vom Typ **Dashboard** hinzufügen.
+1. In HACS `TheDaimos/gewitterradar-dashboard` als benutzerdefiniertes Repository vom Typ **Dashboard** hinzufügen.
 2. Gewitterradar mit der standardmäßig angebotenen **Latest / neuesten Version** installieren bzw. bei einem Update **neu herunterladen**. Aktuell entspricht Latest der V4.04.
-3. HACS installiert `gewitterradar.js`, den vollständigen Ordner `assets/` und zusätzlich `app_gewitterradar_pkg.yaml` nach `/config/www/community/gewitterradar/`.
+3. HACS installiert `gewitterradar.js`, den vollständigen Ordner `assets/` und zusätzlich `app_gewitterradar_pkg.yaml` nach `/config/www/community/gewitterradar-dashboard/`.
 4. `app_gewitterradar_pkg.yaml` anschließend manuell nach `/config/packages/app_gewitterradar_pkg.yaml` kopieren oder verschieben.
 5. Home Assistant vollständig neu starten.
 
 Nach der HACS-Installation muss die Verzeichnisstruktur mindestens so aussehen:
 
 ```text
-/config/www/community/gewitterradar/
+/config/www/community/gewitterradar-dashboard/
 ├── app_gewitterradar_pkg.yaml
 ├── gewitterradar.js
 └── assets/
@@ -31,10 +51,10 @@ Nach der HACS-Installation muss die Verzeichnisstruktur mindestens so aussehen:
     └── gewitterradar-trend-medallion.png
 ```
 
-Home Assistant stellt die Dashboard-Dateien über `/hacsfiles/gewitterradar/` bereit. Wenn Lovelace-Ressourcen in YAML verwaltet werden, lautet die Moduladresse:
+Home Assistant stellt die Dashboard-Dateien über `/hacsfiles/gewitterradar-dashboard/` bereit. Wenn Lovelace-Ressourcen in YAML verwaltet werden, lautet die Moduladresse:
 
 ```text
-/hacsfiles/gewitterradar/gewitterradar.js
+/hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
 ### Warum muss das Package trotzdem manuell verschoben oder kopiert werden?
@@ -42,7 +62,7 @@ Home Assistant stellt die Dashboard-Dateien über `/hacsfiles/gewitterradar/` be
 Dieser eine Schritt kann nicht durch dieses HACS-Repository automatisiert werden. Gewitterradar ist in HACS als **Dashboard-Repository** eingebunden. HACS installiert dessen Dateien in den eigenen Bereich
 
 ```text
-/config/www/community/gewitterradar/
+/config/www/community/gewitterradar-dashboard/
 ```
 
 und übernimmt nicht die Installation von Home-Assistant-Konfigurationsdateien nach
@@ -54,7 +74,7 @@ und übernimmt nicht die Installation von Home-Assistant-Konfigurationsdateien n
 V4.04 löst deshalb den praktischen Teil des Problems: Das benötigte Package wird von HACS bereits lokal mitgeliefert. Der Benutzer muss keine zusätzliche Datei mehr von GitHub suchen oder herunterladen, sondern nur die vorhandene Datei
 
 ```text
-/config/www/community/gewitterradar/app_gewitterradar_pkg.yaml
+/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml
 ```
 
 nach
@@ -155,8 +175,9 @@ Der Recorder-Ausschluss verhindert die dauerhafte Aufzeichnung dieser Entitäten
 ## 6. Ersttest
 
 - Karte lädt und zeigt `V4.04`.
-- `/config/www/community/gewitterradar/` enthält `gewitterradar.js`, `app_gewitterradar_pkg.yaml` und den Ordner `assets/`.
+- `/config/www/community/gewitterradar-dashboard/` enthält `gewitterradar.js`, `app_gewitterradar_pkg.yaml` und den Ordner `assets/`.
 - Unter `assets/` sind alle vier PNG-Dateien vorhanden.
+- Die Lovelace-Ressource zeigt auf `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` beziehungsweise bei manueller Installation auf den konfigurierten `/local/`-Pfad.
 - `/config/packages/app_gewitterradar_pkg.yaml` ist vorhanden und Home Assistant wurde danach neu gestartet.
 - Die `lightning_detection_*`-Helfer sind verfügbar.
 - Blitzortung.org-Status-LED ist plausibel.

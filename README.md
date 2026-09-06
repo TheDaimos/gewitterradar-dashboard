@@ -1,8 +1,17 @@
-# Gewitterradar
+# Gewitterradar — Dashboard
 
 **Gewitterradar** is a Home Assistant dashboard card for live lightning and thunderstorm visualization using data supplied by the Home Assistant Blitzortung.org integration.
 
 Stable channel: **Latest** — currently **V4.04**
+
+## Repository split
+
+Gewitterradar is now distributed through two clearly separated public repositories:
+
+- **Native Home Assistant Integration:** `TheDaimos/gewitterradar`
+- **Dashboard/Card:** this repository, `TheDaimos/gewitterradar-dashboard`
+
+The V4.04 Dashboard release remains frozen and functionally unchanged. The repository rename only separates the frontend/dashboard distribution from the native integration.
 
 ## Highlights
 
@@ -26,22 +35,31 @@ See:
 
 - [Installation – Deutsch](docs/INSTALLATION_DE.md)
 - [Installation – English](docs/INSTALLATION_EN.md)
+- [Repository rename / HACS migration](docs/REPOSITORY_RENAME.md)
 - [Home Assistant Recorder recommendation](docs/RECORDER.md)
 
 Gewitterradar can be installed as a custom **Dashboard** repository in HACS:
 
 ```text
-https://github.com/TheDaimos/gewitterradar
+https://github.com/TheDaimos/gewitterradar-dashboard
 ```
+
+Do not add `TheDaimos/gewitterradar` as a Dashboard repository; that repository now contains the native Home Assistant Integration.
 
 For a normal installation, use the default **newest / Latest** version offered by HACS. Do not deliberately select a fixed older version unless you need a rollback or a specific compatibility state. HACS checks the repository for newer releases and can then offer future Gewitterradar updates automatically.
 
-HACS installs `gewitterradar.js`, the four required visual assets and a staged copy of `app_gewitterradar_pkg.yaml` below `/config/www/community/gewitterradar/` (exposed by Home Assistant as `/hacsfiles/gewitterradar/`).
+With the current repository name, HACS installs the dashboard under `/config/www/community/gewitterradar-dashboard/` and exposes it through `/hacsfiles/gewitterradar-dashboard/`. The current module resource is therefore:
+
+```text
+/hacsfiles/gewitterradar-dashboard/gewitterradar.js
+```
+
+HACS installs `gewitterradar.js`, the four required visual assets and a staged copy of `app_gewitterradar_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.
 
 The package still requires one manual step: copy or move
 
 ```text
-/config/www/community/gewitterradar/app_gewitterradar_pkg.yaml
+/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml
 ```
 
 to
@@ -50,7 +68,9 @@ to
 /config/packages/app_gewitterradar_pkg.yaml
 ```
 
-and restart Home Assistant. This cannot be automated by the HACS Dashboard installation because HACS installs this repository only inside its own `/config/www/community/gewitterradar/` directory and does not deploy configuration files into `/config/packages/`.
+and restart Home Assistant. This cannot be automated by the HACS Dashboard installation because HACS installs this repository only inside its own `/config/www/community/gewitterradar-dashboard/` directory and does not deploy configuration files into `/config/packages/`.
+
+Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) before removing any old entry.
 
 The canonical package source remains `home-assistant/app_gewitterradar_pkg.yaml`; V4.04 places a byte-identical convenience copy at `dist/app_gewitterradar_pkg.yaml` so HACS delivers it together with the card.
 
@@ -66,7 +86,7 @@ V4.04 is frozen as the current verified regression baseline at commit `8ada0e06a
 
 V4.04 keeps the working V4.03 HACS distribution model: the GitHub release publishes **zero custom release assets**, forcing current HACS to use the tagged `dist/` tree. V4.04 adds `dist/app_gewitterradar_pkg.yaml` to that tree, so users no longer need to download the helper package separately before installing it manually under `/config/packages/`.
 
-Future stable releases are explicitly published as GitHub **Latest** releases. At present GitHub `releases/latest` resolves to V4.04. See [Release policy](docs/RELEASE_POLICY.md).
+Future stable Dashboard releases are explicitly published as GitHub **Latest** releases. At present GitHub `releases/latest` resolves to V4.04. See [Release policy](docs/RELEASE_POLICY.md).
 
 Application behavior, helper IDs/defaults, layouts, lightning processing, compass behavior and the optimized PNG files remain unchanged.
 
