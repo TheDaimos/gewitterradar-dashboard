@@ -30,7 +30,7 @@ jobs:
       - name: Download and verify accepted transfer artifact
         shell: bash
         env:
-          TRANSFER_URL: 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-e754-81f4-9b49-f995a9542dd3/raw?se=2026-09-07T21%3A26%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=fa54de0d-f261-55e1-8076-4136776c7f4a&skoid=8981e47a-681f-4a6a-b86c-73d6347614b7&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-07T08%3A32%3A59Z&ske=2026-09-08T08%3A32%3A59Z&sks=b&skv=2026-02-06&sig=jpwTu1YYcReHcST8HpIfqH5bP4YiCyViEtcb0tKLAME%3D'
+          TRANSFER_URL: 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-2620-8210-8921-5c7a28f2d617/raw?se=2026-09-07T21%3A29%3A01Z&sp=r&sv=2026-02-06&sr=b&scid=48e7019a-5b60-5b2b-8200-f0a34404fd08&skoid=8981e47a-681f-4a6a-b86c-73d6347614b7&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-07T20%3A14%3A51Z&ske=2026-09-08T20%3A14%3A51Z&sks=b&skv=2026-02-06&sig=xzysRTt3ryfCBKrOVN0CLV82q9og/kGad4BERQKRKgs%3D'
         run: |
           set -euo pipefail
           curl --fail --location --retry 3 --retry-delay 2 "$TRANSFER_URL" -o "${RUNNER_TEMP}/v4_05-transfer.zip"
