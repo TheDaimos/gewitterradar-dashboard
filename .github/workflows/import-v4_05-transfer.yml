@@ -1,0 +1,73 @@
+name: Import accepted V4.05 dashboard candidate
+
+on:
+  push:
+    branches:
+      - release/v4.05
+    paths:
+      - '.github/workflows/import-v4_05-transfer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v4
+        with:
+          ref: release/v4.05
+          fetch-depth: 0
+
+      - name: Verify frozen V4.04 source remains untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:gewitterradar-card-v4_04.js)" = '6df0f6251e688809dab7450908361be7b7cb3442'
+          test "$(git rev-parse HEAD:dist/gewitterradar.js)" = '86b92827dc81fed6cf32e5e7914feba2083224ba'
+
+      - name: Download and verify accepted transfer artifact
+        shell: bash
+        env:
+          TRANSFER_URL: 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-e754-81f4-9b49-f995a9542dd3/raw?se=2026-09-07T21%3A26%3A53Z&sp=r&sv=2026-02-06&sr=b&scid=fa54de0d-f261-55e1-8076-4136776c7f4a&skoid=8981e47a-681f-4a6a-b86c-73d6347614b7&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-07T08%3A32%3A59Z&ske=2026-09-08T08%3A32%3A59Z&sks=b&skv=2026-02-06&sig=jpwTu1YYcReHcST8HpIfqH5bP4YiCyViEtcb0tKLAME%3D'
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 2 "$TRANSFER_URL" -o "${RUNNER_TEMP}/v4_05-transfer.zip"
+          echo '655d5d7b3d5be8681d38ff41554f114a19d9c6c8d34f3b4a6c4c00398680d414  '${RUNNER_TEMP}'/v4_05-transfer.zip' | sha256sum --check
+          mkdir -p "${RUNNER_TEMP}/v4_05-transfer"
+          unzip -q "${RUNNER_TEMP}/v4_05-transfer.zip" -d "${RUNNER_TEMP}/v4_05-transfer"
+          test -f "${RUNNER_TEMP}/v4_05-transfer/gewitterradar-card-v4_05.js"
+          test -f "${RUNNER_TEMP}/v4_05-transfer/gewitterradar-card-v4_05.txt"
+          test -f "${RUNNER_TEMP}/v4_05-transfer/dist/gewitterradar.js"
+          test "$(find "${RUNNER_TEMP}/v4_05-transfer/dist/assets" -maxdepth 1 -type f | wc -l)" -eq 15
+          grep -Fq "const CARD_VERSION = '4.05';" "${RUNNER_TEMP}/v4_05-transfer/gewitterradar-card-v4_05.js"
+          grep -Fq "const GEWITTERRADAR_BUILD = 'V4.05-2026-09-07';" "${RUNNER_TEMP}/v4_05-transfer/gewitterradar-card-v4_05.js"
+
+      - name: Import V4.05 source, HACS distribution and accepted assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          incoming="${RUNNER_TEMP}/v4_05-transfer"
+          cp "$incoming/gewitterradar-card-v4_05.js" gewitterradar-card-v4_05.js
+          cp "$incoming/gewitterradar-card-v4_05.txt" gewitterradar-card-v4_05.txt
+          cp "$incoming/dist/gewitterradar.js" dist/gewitterradar.js
+          rm -rf dist/assets
+          mkdir -p dist/assets
+          cp -a "$incoming/dist/assets/." dist/assets/
+          node --check gewitterradar-card-v4_05.js
+          node --check dist/gewitterradar.js
+
+      - name: Commit imported accepted candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gewitterradar-card-v4_05.js gewitterradar-card-v4_05.txt dist/gewitterradar.js dist/assets
+          if git diff --cached --quiet; then
+            echo 'Accepted V4.05 candidate already imported.'
+            exit 0
+          fi
+          git commit -m 'Import accepted Gewitterradar V4.05 dashboard candidate'
+          git push origin HEAD:release/v4.05
