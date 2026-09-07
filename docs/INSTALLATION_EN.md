@@ -1,4 +1,4 @@
-# Gewitterradar V4.04 – Installation (EN)
+# Gewitterradar V4.05 – Installation (EN)
 
 ## Requirements
 
@@ -6,88 +6,68 @@
 - Blitzortung.org integration providing the required lightning/counter entities.
 - Default counter used by the example: `sensor.home_lightning_counter`.
 
-## Repository split since 2026-09-06
+## Repository split
 
-Public distribution is now clearly separated:
+Public distribution is separated into:
 
 - **Native Home Assistant Integration:** `TheDaimos/gewitterradar`
 - **Dashboard/Card:** `TheDaimos/gewitterradar-dashboard`
 
-The Dashboard repository was only renamed. The frozen V4.04 application state, card, assets and helper logic remain unchanged.
+V4.04 remains unchanged as the frozen regression baseline. V4.05 is the current stable Dashboard release.
 
-HACS derives the local Dashboard directory and `/hacsfiles/` namespace from the current repository name. The renamed Dashboard therefore now uses:
+HACS uses:
 
 ```text
 /config/www/community/gewitterradar-dashboard/
 /hacsfiles/gewitterradar-dashboard/
 ```
 
-**Important for installations created before the rename:** Do not update or redownload the old HACS Dashboard entry `TheDaimos/gewitterradar`. That repository name is now used by the new native Home Assistant Integration. Instead, add `TheDaimos/gewitterradar-dashboard` as a new custom **Dashboard** repository, install V4.04 from it, and first verify that `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` loads successfully. Only then remove the stale old Dashboard entry/resource that still uses `/hacsfiles/gewitterradar/`. If Lovelace resources are managed in YAML, update the resource URL manually.
-
-See [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md) for the complete safe migration order.
+**Important for installations created before the repository rename:** Do not update or redownload the old HACS Dashboard entry `TheDaimos/gewitterradar`. That repository name now belongs to the native Home Assistant Integration. Instead, add `TheDaimos/gewitterradar-dashboard` as a custom **Dashboard** repository, install the current version there and first verify `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`. Only then remove the stale old Dashboard entry/resource. See [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
 
 ## HACS update channel
 
-For normal installation and future updates, use the default **newest / Latest** version offered by HACS. This is currently V4.04. Select a fixed older version only for an intentional rollback or a specific compatibility requirement. HACS regularly refreshes repository metadata and can offer newer stable Gewitterradar releases as updates.
+For normal installations and updates, use the default **Latest / newest version** offered by HACS. This is currently **V4.05**. Select an older fixed version only for an intentional rollback.
 
-## Option A: Install through HACS
+## Option A: Install or update through HACS
 
-1. Add `TheDaimos/gewitterradar-dashboard` to HACS as a custom **Dashboard** repository.
-2. Install the default **Latest / newest version**, or use **Redownload** when upgrading. Latest currently resolves to V4.04.
+1. Add `TheDaimos/gewitterradar-dashboard` to HACS as a custom **Dashboard** repository if it is not already present.
+2. Install the default **Latest / newest version**, or apply the offered update to V4.05.
 3. HACS installs `gewitterradar.js`, the complete `assets/` directory and `app_gewitterradar_pkg.yaml` under `/config/www/community/gewitterradar-dashboard/`.
-4. Manually copy or move `app_gewitterradar_pkg.yaml` to `/config/packages/app_gewitterradar_pkg.yaml`.
-5. Perform a full Home Assistant restart.
+4. If the YAML helper package is used, copy `app_gewitterradar_pkg.yaml` to `/config/packages/app_gewitterradar_pkg.yaml`. Copying is recommended so the HACS staging copy remains available.
+5. Perform a full Home Assistant restart after a package change.
+6. Refresh the browser/Companion App cache if needed.
 
-After the HACS installation, the directory must contain at least:
+The HACS installation contains at least:
 
 ```text
 /config/www/community/gewitterradar-dashboard/
 ├── app_gewitterradar_pkg.yaml
 ├── gewitterradar.js
 └── assets/
-    ├── gewitterradar-compass-frame-v1.png
-    ├── gewitterradar-compass-frame-v2.png
+    ├── gewitterradar-about-dedication-v4.webp
+    ├── gewitterradar-about-hero-v2.webp
+    ├── gewitterradar-brand-icon.png
+    ├── gewitterradar-compass-frame-v1.png … v5.png
+    ├── gewitterradar-compass-selector-frame-v1.png … v5.png
     ├── gewitterradar-trend-arrow.png
     └── gewitterradar-trend-medallion.png
 ```
 
-Home Assistant exposes the dashboard files through `/hacsfiles/gewitterradar-dashboard/`. If Lovelace resources are managed in YAML, use:
+V4.05 uses **15 local visual assets** in total.
+
+The Lovelace module URL is:
 
 ```text
 /hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
-### Why is the package copy/move still manual?
+### Why is the package still a manual step?
 
-This final step cannot be automated by this HACS repository. Gewitterradar is installed as a **Dashboard repository**. HACS installs the repository inside its own directory:
+Gewitterradar is installed as a HACS **Dashboard repository**. HACS installs files under `/config/www/community/gewitterradar-dashboard/` but cannot deploy Home Assistant configuration directly into `/config/packages/`.
 
-```text
-/config/www/community/gewitterradar-dashboard/
-```
+The maintained source is `home-assistant/app_gewitterradar_pkg.yaml`; `dist/app_gewitterradar_pkg.yaml` is the byte-identical HACS staging copy. CI verifies that both files match.
 
-It does not deploy Home Assistant configuration files into:
-
-```text
-/config/packages/
-```
-
-V4.04 therefore solves the practical part: HACS already downloads the required package locally. The user no longer needs to find or download a separate file from GitHub and only has to copy or move:
-
-```text
-/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml
-```
-
-to:
-
-```text
-/config/packages/app_gewitterradar_pkg.yaml
-```
-
-**Copying is recommended**, so the HACS-provided staging copy remains available in the Gewitterradar directory.
-
-The maintained canonical package is `home-assistant/app_gewitterradar_pkg.yaml`. The HACS build creates `dist/app_gewitterradar_pkg.yaml`; CI verifies that both files are byte-identical.
-
-`configuration.yaml` must include packages:
+When packages are used, `configuration.yaml` must include:
 
 ```yaml
 homeassistant:
@@ -96,47 +76,28 @@ homeassistant:
 
 If that block already exists, do not add a second top-level `homeassistant:` key.
 
-Existing `lightning_detection_*` helper IDs are intentionally preserved. Package logic itself is unchanged from V4.03. Restart Home Assistant after copying/replacing the package.
-
-If stale helpers are already shown as unavailable because the package was previously missing, do not delete them prematurely. Restore the package and restart Home Assistant; with the same entity IDs, the YAML helpers are provided again under their existing IDs.
-
-### Upgrade note for V4.01/V4.02/V4.03
-
-V4.01 could be treated as a single-file installation because of a standalone `gewitterradar.js` release asset. V4.02 removed that file but still published package/ZIP/checksum assets, which current HACS also prioritized before the `dist/` tree. V4.03 fixed this by publishing no custom release assets, allowing HACS to install the card and graphics correctly from `dist/`.
-
-V4.04 preserves that working zero-custom-release-asset mechanism and only adds `dist/app_gewitterradar_pkg.yaml`. The helper package therefore arrives with the HACS installation without reactivating the broken release-asset path.
+Existing `lightning_detection_*` helper IDs are intentionally preserved. The package distribution model is unchanged from V4.04.
 
 ## Option B: Manual installation
 
 ### 1. Copy JavaScript and assets
 
-- Copy `gewitterradar-card-v4_04.js` to `/config/www/gewitterradar/gewitterradar-card-v4_04.js`.
-- Copy the four PNG files from `dist/assets/` to `/config/www/gewitterradar/assets/`.
-
-Expected asset files:
-
-- `gewitterradar-trend-medallion.png`
-- `gewitterradar-trend-arrow.png`
-- `gewitterradar-compass-frame-v1.png`
-- `gewitterradar-compass-frame-v2.png`
+- Copy `gewitterradar-card-v4_05.js` to `/config/www/gewitterradar/gewitterradar-card-v4_05.js`.
+- Copy the complete contents of `dist/assets/` to `/config/www/gewitterradar/assets/`.
 
 ### 2. Add the Lovelace resource
 
 Register the card as a JavaScript module:
 
 ```text
-/local/gewitterradar/gewitterradar-card-v4_04.js?v=4_04
+/local/gewitterradar/gewitterradar-card-v4_05.js?v=4_05
 ```
 
-After updates, refresh the browser or Companion App cache.
+### 3. Install the Home Assistant package
 
-## 3. Install the Home Assistant package
+If the YAML helper package is used, copy `home-assistant/app_gewitterradar_pkg.yaml` to `/config/packages/app_gewitterradar_pkg.yaml`. The identical `dist/app_gewitterradar_pkg.yaml` can be used as an alternative. Then perform a full Home Assistant restart.
 
-For a manual installation, copy `home-assistant/app_gewitterradar_pkg.yaml` to `/config/packages/app_gewitterradar_pkg.yaml`. The byte-identical `dist/app_gewitterradar_pkg.yaml` can be used as an alternative source.
-
-Then perform a full Home Assistant restart.
-
-## 4. Add the Gewitterradar view
+## Example Gewitterradar view
 
 ```yaml
 title: Gewitterradar
@@ -152,36 +113,29 @@ cards:
         compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
 ```
 
-## 5. Recorder protection recommended
+## Recorder protection recommended
 
-Short-lived lightning entities and the frequently updated lightning sensors should normally be excluded from long-term Recorder storage:
+Add this configuration to `configuration.yaml`:
 
 ```yaml
 recorder:
   exclude:
     entity_globs:
       - "geo_location.lightning_strike*"
-      - "sensor.home_lightning_distance"
-      - "sensor.home_lightning_azimuth"
-      - "sensor.home_lightning_counter"
+    entities:
+      - sensor.home_lightning_distance
+      - sensor.home_lightning_azimuth
+      - sensor.home_lightning_counter
 ```
 
-If a `recorder:` block already exists, merge these entries into it instead of creating a second top-level key.
+If a `recorder:` block already exists, merge these entries into it instead of creating a second top-level key. The exclusion prevents long-term Recorder/History storage without disabling the live states used by Gewitterradar.
 
-The actual number of lightning events processed by Home Assistant depends on the Blitzortung.org integration settings, especially the configured detection radius, time window and maximum number of simultaneously provided lightning events. Larger values can increase system and database load during high lightning activity.
+## First smoke test after V4.05
 
-The Recorder exclusion prevents long-term storage of these entities without disabling their live availability for Gewitterradar.
-
-## 6. First smoke test
-
-- The card loads and displays `V4.04`.
-- `/config/www/community/gewitterradar-dashboard/` contains `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and the `assets/` directory.
-- All four PNG files are present under `assets/`.
-- The Lovelace resource points to `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`, or to the configured `/local/` path for a manual installation.
-- `/config/packages/app_gewitterradar_pkg.yaml` exists and Home Assistant was restarted afterwards.
-- The `lightning_detection_*` helpers are available.
-- The Blitzortung.org source-status LED is plausible.
-- Settings open correctly.
-- Check observation, storm and danger radii; storm must be at least 5 KM and at least the current danger radius.
-- Switch KM/MI.
-- Check compass and Recent/history areas.
+- HACS/the card reports `V4.05`.
+- `/config/www/community/gewitterradar-dashboard/` contains `gewitterradar.js`, `app_gewitterradar_pkg.yaml` and all 15 files under `assets/`.
+- The Lovelace resource points to `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+- `lightning_detection_*` helpers are available when the YAML package is used.
+- Card, radii, compass, Recent/history and KM/MI continue to work.
+- On first start, **Über Gewitterradar** opens; afterwards it can be reopened through **Settings → Über Gewitterradar**.
+- Focus/Escape, scrolling and the Recorder copy action behave correctly.

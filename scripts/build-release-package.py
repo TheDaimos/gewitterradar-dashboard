@@ -9,19 +9,37 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUTPUT = PROJECT_ROOT / "gewitterradar-v4_04.zip"
-FIXED_TIMESTAMP = (2026, 9, 2, 0, 0, 0)
+DEFAULT_OUTPUT = PROJECT_ROOT / "gewitterradar-v4_05.zip"
+FIXED_TIMESTAMP = (2026, 9, 7, 0, 0, 0)
 
 ROOT_FILES = (
     "README.md",
     "CHANGELOG.md",
-    "RELEASE_NOTES_V4_04.md",
+    "RELEASE_NOTES_V4_05.md",
     "SHA256SUMS.txt",
     "hacs.json",
-    "gewitterradar-card-v4_04.js",
-    "gewitterradar-card-v4_04.txt",
+    "gewitterradar-card-v4_05.js",
+    "gewitterradar-card-v4_05.txt",
 )
 DIRECTORIES = ("dist", "docs", "home-assistant")
+
+REQUIRED_ASSETS = {
+    "gewitterradar-about-dedication-v4.webp",
+    "gewitterradar-about-hero-v2.webp",
+    "gewitterradar-brand-icon.png",
+    "gewitterradar-compass-frame-v1.png",
+    "gewitterradar-compass-frame-v2.png",
+    "gewitterradar-compass-frame-v3.png",
+    "gewitterradar-compass-frame-v4.png",
+    "gewitterradar-compass-frame-v5.png",
+    "gewitterradar-compass-selector-frame-v1.png",
+    "gewitterradar-compass-selector-frame-v2.png",
+    "gewitterradar-compass-selector-frame-v3.png",
+    "gewitterradar-compass-selector-frame-v4.png",
+    "gewitterradar-compass-selector-frame-v5.png",
+    "gewitterradar-trend-arrow.png",
+    "gewitterradar-trend-medallion.png",
+}
 
 
 def package_files() -> list[Path]:
@@ -59,17 +77,17 @@ def main() -> None:
         required = {
             "dist/gewitterradar.js",
             "dist/app_gewitterradar_pkg.yaml",
-            "dist/assets/gewitterradar-compass-frame-v1.png",
-            "dist/assets/gewitterradar-compass-frame-v2.png",
-            "dist/assets/gewitterradar-trend-arrow.png",
-            "dist/assets/gewitterradar-trend-medallion.png",
             "home-assistant/app_gewitterradar_pkg.yaml",
+            *(f"dist/assets/{asset}" for asset in REQUIRED_ASSETS),
         }
         absent = sorted(required - names)
         if absent:
             raise RuntimeError(f"Source ZIP is incomplete; missing: {absent}")
 
-    print(f"Built internal V4.04 source ZIP {output} with {len(package_files())} files and verified HACS card, graphics and staged Home Assistant package.")
+    print(
+        f"Built internal V4.05 source ZIP {output} with {len(package_files())} files and "
+        f"verified HACS card, {len(REQUIRED_ASSETS)} graphics and staged Home Assistant package."
+    )
 
 
 if __name__ == "__main__":

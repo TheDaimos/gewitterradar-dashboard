@@ -24,19 +24,19 @@
     return window.__leafletJsPromise;
   }
 
-  const TREND_MEDALLION_IMAGE = new URL('./assets/gewitterradar-trend-medallion.png?v=409', import.meta.url).href;
-  const TREND_ARROW_IMAGE = new URL('./assets/gewitterradar-trend-arrow.png?v=409', import.meta.url).href;
-  const COMPASS_METAL_FRAME_V1_IMAGE = new URL('./assets/gewitterradar-compass-frame-v1.png?v=404', import.meta.url).href;
-  const COMPASS_METAL_FRAME_V2_IMAGE = new URL('./assets/gewitterradar-compass-frame-v2.png?v=405', import.meta.url).href;
-  const COMPASS_METAL_FRAME_V3_IMAGE = new URL('./assets/gewitterradar-compass-frame-v3.png?v=405', import.meta.url).href;
-  const COMPASS_METAL_FRAME_V4_IMAGE = new URL('./assets/gewitterradar-compass-frame-v4.png?v=406', import.meta.url).href;
-  const COMPASS_METAL_FRAME_V5_IMAGE = new URL('./assets/gewitterradar-compass-frame-v5.png?v=406', import.meta.url).href;
+  const TREND_MEDALLION_IMAGE = '/local/gewitterradar/assets/gewitterradar-trend-medallion.png?v=409';
+  const TREND_ARROW_IMAGE = '/local/gewitterradar/assets/gewitterradar-trend-arrow.png?v=409';
+  const COMPASS_METAL_FRAME_V1_IMAGE = '/local/gewitterradar/assets/gewitterradar-compass-frame-v1.png?v=404';
+  const COMPASS_METAL_FRAME_V2_IMAGE = '/local/gewitterradar/assets/gewitterradar-compass-frame-v2.png?v=405';
+  const COMPASS_METAL_FRAME_V3_IMAGE = '/local/gewitterradar/assets/gewitterradar-compass-frame-v3.png?v=405';
+  const COMPASS_METAL_FRAME_V4_IMAGE = '/local/gewitterradar/assets/gewitterradar-compass-frame-v4.png?v=406';
+  const COMPASS_METAL_FRAME_V5_IMAGE = '/local/gewitterradar/assets/gewitterradar-compass-frame-v5.png?v=406';
   const COMPASS_SELECTOR_FRAME_IMAGES = [
-    new URL('./assets/gewitterradar-compass-selector-frame-v1.png?v=406', import.meta.url).href,
-    new URL('./assets/gewitterradar-compass-selector-frame-v2.png?v=406', import.meta.url).href,
-    new URL('./assets/gewitterradar-compass-selector-frame-v3.png?v=406', import.meta.url).href,
-    new URL('./assets/gewitterradar-compass-selector-frame-v4.png?v=406', import.meta.url).href,
-    new URL('./assets/gewitterradar-compass-selector-frame-v5.png?v=406', import.meta.url).href,
+    '/local/gewitterradar/assets/gewitterradar-compass-selector-frame-v1.png?v=406',
+    '/local/gewitterradar/assets/gewitterradar-compass-selector-frame-v2.png?v=406',
+    '/local/gewitterradar/assets/gewitterradar-compass-selector-frame-v3.png?v=406',
+    '/local/gewitterradar/assets/gewitterradar-compass-selector-frame-v4.png?v=406',
+    '/local/gewitterradar/assets/gewitterradar-compass-selector-frame-v5.png?v=406',
     null
   ];
   const COMPASS_DESIGNS = [
@@ -51,9 +51,9 @@
   const ABOUT_ONBOARDING_VERSION = 1;
   const ABOUT_STORAGE_KEY = 'gewitterradar-about-onboarding-version';
   let aboutClaimedVersion = 0;
-  const ABOUT_LOGO = new URL('./assets/gewitterradar-brand-icon.png?v=404', import.meta.url).href;
-  const ABOUT_HERO_IMAGE = new URL('./assets/gewitterradar-about-hero-v2.webp', import.meta.url).href;
-  const ABOUT_DEDICATION_IMAGE = new URL('./assets/gewitterradar-about-dedication-v4.webp', import.meta.url).href;
+  const ABOUT_LOGO = '/local/gewitterradar/assets/gewitterradar-brand-icon.png?v=404';
+  const ABOUT_HERO_IMAGE = '/local/gewitterradar/assets/gewitterradar-about-hero-v2.webp';
+  const ABOUT_DEDICATION_IMAGE = '/local/gewitterradar/assets/gewitterradar-about-dedication-v4.webp';
   const ABOUT_DEDICATION = 'Danke, dass du mir die Zeit lässt, meinen Interessen und meiner Begeisterung für Technik, Wetter und all den Ideen dazwischen nachzugehen – und mich Projekten wie Gewitterradar mit so viel Freude und Ausdauer zu widmen.';
   // Kept byte-for-byte in sync with the fenced YAML in docs/RECORDER.md by the build gate.
   const ABOUT_RECORDER_YAML = `recorder:
