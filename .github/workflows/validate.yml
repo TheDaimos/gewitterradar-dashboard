@@ -1,4 +1,4 @@
-name: Validate HACS and publish V4.04
+name: Validate HACS and publish V4.05
 
 on:
   push:
@@ -32,14 +32,14 @@ jobs:
           test "${tag_commit}" = "${expected}"
           test "${branch_commit}" = "${expected}"
           test "${release_target}" = "${expected}"
-      - name: Rebuild HACS distribution
+      - name: Rebuild HACS V4.05 distribution
         run: node scripts/build-hacs-dist.mjs
       - name: Verify generated HACS files are committed
         run: git diff --exit-code -- dist/gewitterradar.js dist/app_gewitterradar_pkg.yaml
-      - name: Verify HACS distribution, staged package and zero-asset release layout
+      - name: Verify HACS V4.05 distribution, staged package and zero-asset release layout
         run: node scripts/verify-hacs-dist.mjs
-      - name: Verify complete V4.04 source package internally
-        run: python3 scripts/build-release-package.py "${RUNNER_TEMP}/gewitterradar-v4_04.zip"
+      - name: Verify complete V4.05 source package internally
+        run: python3 scripts/build-release-package.py "${RUNNER_TEMP}/gewitterradar-v4_05.zip"
 
   validate-hacs:
     runs-on: ubuntu-latest
@@ -50,7 +50,7 @@ jobs:
           category: plugin
           ignore: license images
 
-  publish-v4-04:
+  publish-v4-05:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - verify-dist
@@ -59,19 +59,38 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Check out repository
+      - name: Check out repository with release history
         uses: actions/checkout@v4
-      - name: Publish V4.04 without custom release assets
+        with:
+          fetch-depth: 0
+      - name: Publish V4.05 without custom release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v4.04 --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            echo "Release v4.04 already exists; leaving the frozen release unchanged."
+          set -euo pipefail
+
+          if gh release view v4.05 --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            git fetch --force origin refs/tags/v4.05:refs/tags/v4.05
+            release_target="$(gh release view v4.05 --repo "${GITHUB_REPOSITORY}" --json targetCommitish --jq '.targetCommitish')"
+            tag_commit="$(git rev-parse 'refs/tags/v4.05^{commit}')"
+            frozen_commit="$(git ls-remote --heads origin refs/heads/frozen/v4.05 | awk '{print $1}')"
+            test -n "${frozen_commit}"
+            test "${release_target}" = "${tag_commit}"
+            test "${frozen_commit}" = "${tag_commit}"
+            echo "Release v4.05 already exists and its tag, release target and frozen backup agree; leaving it unchanged."
             exit 0
           fi
-          gh release create v4.04 \
+
+          existing_frozen="$(git ls-remote --heads origin refs/heads/frozen/v4.05 | awk '{print $1}')"
+          if [ -n "${existing_frozen}" ]; then
+            test "${existing_frozen}" = "${GITHUB_SHA}"
+          else
+            git push origin "${GITHUB_SHA}:refs/heads/frozen/v4.05"
+          fi
+
+          gh release create v4.05 \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Gewitterradar V4.04" \
-            --notes-file RELEASE_NOTES_V4_04.md \
+            --title "Gewitterradar V4.05" \
+            --notes-file RELEASE_NOTES_V4_05.md \
             --latest
