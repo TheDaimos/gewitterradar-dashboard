@@ -8,10 +8,12 @@
 
 ## Repository-Aufteilung
 
-Die öffentliche Verteilung ist getrennt:
+Für Nutzer und Entwicklung gibt es fachlich nur **Gewitterradar**. Die native Home-Assistant-Integration und die Dashboard-/Lovelace-Karte sind zwei Auslieferungsformen desselben Projekts.
 
-- **Native Home-Assistant-Integration:** `TheDaimos/gewitterradar`
-- **Dashboard/Card:** `TheDaimos/gewitterradar-dashboard`
+Aktuelle öffentliche Auslieferung:
+
+- **Kanonisches Produkt / native Home-Assistant-Integration:** `TheDaimos/gewitterradar`
+- **Abgeleitete Dashboard/Card-Auslieferung:** `TheDaimos/gewitterradar-dashboard`
 
 V4.04 bleibt als eingefrorene Regression-Basis unverändert erhalten. V4.05 ist das aktuelle stabile Dashboard-Release.
 
@@ -22,7 +24,7 @@ HACS verwendet für das Dashboard:
 /hacsfiles/gewitterradar-dashboard/
 ```
 
-**Wichtig für Installationen von vor der Repository-Umbenennung:** Den alten HACS-Dashboard-Eintrag `TheDaimos/gewitterradar` nicht aktualisieren und nicht neu herunterladen. Dieser Repository-Name gehört inzwischen zur nativen Home-Assistant-Integration. Stattdessen `TheDaimos/gewitterradar-dashboard` als benutzerdefiniertes **Dashboard**-Repository hinzufügen, dort die aktuelle Version installieren und zuerst `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` prüfen. Erst danach den alten Dashboard-Eintrag bzw. die alte Ressource entfernen. Siehe [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
+**Wichtig für Installationen von vor der Repository-Umbenennung:** Den alten HACS-Dashboard-Eintrag `TheDaimos/gewitterradar` nicht aktualisieren und nicht neu herunterladen. Dieser Repository-Name gehört inzwischen zur nativen Home-Assistant-Integration bzw. kanonischen Gewitterradar-Produktquelle. Stattdessen `TheDaimos/gewitterradar-dashboard` als benutzerdefiniertes **Dashboard**-Repository hinzufügen, dort die aktuelle Version installieren und zuerst `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` prüfen. Erst danach den alten Dashboard-Eintrag bzw. die alte Ressource entfernen. Siehe [`REPOSITORY_RENAME.md`](REPOSITORY_RENAME.md).
 
 ## HACS-Updatekanal
 
@@ -33,9 +35,10 @@ Für normale Installationen und Updates die standardmäßig angebotene **Latest 
 1. `TheDaimos/gewitterradar-dashboard` in HACS als benutzerdefiniertes Repository vom Typ **Dashboard** hinzufügen, falls noch nicht vorhanden.
 2. Gewitterradar als **Latest / neueste Version** installieren bzw. das angebotene Update auf V4.05 durchführen.
 3. HACS installiert `gewitterradar.js`, den vollständigen Ordner `assets/` und `app_gewitterradar_pkg.yaml` nach `/config/www/community/gewitterradar-dashboard/`.
-4. Wenn das YAML-Helper-Package verwendet wird, `app_gewitterradar_pkg.yaml` nach `/config/packages/app_gewitterradar_pkg.yaml` kopieren. Kopieren wird empfohlen, damit die HACS-Ausgangsdatei erhalten bleibt.
-5. Nach einer Package-Änderung Home Assistant vollständig neu starten.
-6. Browser-/Companion-App-Cache bei Bedarf neu laden.
+4. **Danach die Gewitterradar-View anlegen bzw. eine bestehende View auf die neue Ressource umstellen.** Der HACS-Download allein erzeugt keine Home-Assistant-View.
+5. Wenn das YAML-Helper-Package verwendet wird, `app_gewitterradar_pkg.yaml` nach `/config/packages/app_gewitterradar_pkg.yaml` kopieren. Kopieren wird empfohlen, damit die HACS-Ausgangsdatei erhalten bleibt.
+6. Nach einer Package-Änderung Home Assistant vollständig neu starten.
+7. Browser-/Companion-App-Cache bei Bedarf neu laden.
 
 Die HACS-Struktur enthält mindestens:
 
@@ -60,6 +63,42 @@ Die Lovelace-Moduladresse lautet:
 ```text
 /hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
+
+### Nach dem HACS-Download: Ressource und View prüfen
+
+Prüfe unter **Einstellungen → Dashboards → Ressourcen**, dass folgende JavaScript-Modulressource vorhanden ist:
+
+```text
+/hacsfiles/gewitterradar-dashboard/gewitterradar.js
+```
+
+Ist dort noch eine alte Ressource wie `/hacsfiles/gewitterradar/...` eingetragen, diese nicht parallel zur neuen Karte weiterladen. Erst die neue Ressource verifizieren, dann den veralteten Eintrag entfernen.
+
+Danach eine neue View anlegen oder eine bestehende Gewitterradar-View bearbeiten.
+
+## Gewitterradar-View – vollständiges Beispiel
+
+```yaml
+title: Gewitterradar
+path: gewitterradar
+icon: mdi:weather-lightning
+type: panel
+cards:
+  - type: vertical-stack
+    cards:
+      - type: custom:gewitterradar-card
+        counter_entity: sensor.home_lightning_counter
+        radius_entity: input_number.lightning_detection_observation_radius
+        compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
+```
+
+Der eigentliche Kartentyp lautet:
+
+```yaml
+type: custom:gewitterradar-card
+```
+
+Die drei Beispiel-Entity-IDs stammen aus der bisherigen Package-/Legacy-Konfiguration. Bei einer Installation mit der nativen Gewitterradar-Integration werden Frontend und Konfiguration im Rahmen der laufenden Produktkonvergenz vereinheitlicht. Bis diese gemeinsame Auslieferung veröffentlicht ist, ist das obige V4.05-Beispiel die dokumentierte Dashboard-Referenz.
 
 ### Warum bleibt das Package ein manueller Schritt?
 
@@ -97,22 +136,6 @@ Als JavaScript-Modul:
 
 Falls das YAML-Helper-Package verwendet wird, `home-assistant/app_gewitterradar_pkg.yaml` nach `/config/packages/app_gewitterradar_pkg.yaml` kopieren. Alternativ kann die identische Datei `dist/app_gewitterradar_pkg.yaml` verwendet werden. Danach Home Assistant vollständig neu starten.
 
-## Gewitterradar-View – Beispiel
-
-```yaml
-title: Gewitterradar
-path: gewitterradar
-icon: mdi:weather-lightning
-type: panel
-cards:
-  - type: vertical-stack
-    cards:
-      - type: custom:gewitterradar-card
-        counter_entity: sensor.home_lightning_counter
-        radius_entity: input_number.lightning_detection_observation_radius
-        compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
-```
-
 ## Recorder-Schutz empfohlen
 
 Diese Konfiguration gehört in `configuration.yaml`:
@@ -135,6 +158,7 @@ Wenn bereits ein `recorder:`-Block existiert, die Einträge dort ergänzen und k
 - HACS bzw. die Karte zeigt `V4.05`.
 - `/config/www/community/gewitterradar-dashboard/` enthält `gewitterradar.js`, `app_gewitterradar_pkg.yaml` und alle 15 Dateien unter `assets/`.
 - Die Lovelace-Ressource zeigt auf `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+- Eine Gewitterradar-View mit `type: custom:gewitterradar-card` ist angelegt.
 - Die `lightning_detection_*`-Helfer sind verfügbar, sofern das YAML-Package verwendet wird.
 - Karte, Radien, Kompass, Recent-/Verlaufsbereich und KM/MI funktionieren weiterhin.
 - Beim ersten Start erscheint **Über Gewitterradar**; anschließend lässt sich der Dialog über **Einstellungen → Über Gewitterradar** erneut öffnen.
