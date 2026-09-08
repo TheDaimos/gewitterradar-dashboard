@@ -4,12 +4,14 @@
 
 Stable channel: **Latest** — currently **V4.05**
 
-## Repository split
+## Repository role
 
-Gewitterradar is distributed through two clearly separated public repositories:
+For users and development there is one product: **Gewitterradar**. The native Home Assistant Integration and the Dashboard/Card are two delivery forms of the same project.
 
-- **Native Home Assistant Integration:** `TheDaimos/gewitterradar`
-- **Dashboard/Card:** this repository, `TheDaimos/gewitterradar-dashboard`
+Current public delivery repositories:
+
+- **Canonical product / native Home Assistant Integration:** `TheDaimos/gewitterradar`
+- **Derived Dashboard/Card delivery:** this repository, `TheDaimos/gewitterradar-dashboard`
 
 The V4.04 Dashboard release remains frozen as the verified regression baseline. V4.05 is a new release and does not modify the V4.04 tag or frozen backup branch.
 
@@ -46,7 +48,7 @@ Gewitterradar can be installed as a custom **Dashboard** repository in HACS:
 https://github.com/TheDaimos/gewitterradar-dashboard
 ```
 
-Do not add `TheDaimos/gewitterradar` as a Dashboard repository; that repository contains the native Home Assistant Integration.
+Do not add `TheDaimos/gewitterradar` as a Dashboard repository; that repository contains the canonical Gewitterradar product and native Home Assistant Integration.
 
 For a normal installation, use the default **newest / Latest** version offered by HACS. Do not deliberately select a fixed older version unless you need a rollback or a specific compatibility state. HACS checks the repository for newer releases and can offer future Gewitterradar updates automatically.
 
@@ -57,6 +59,40 @@ With the current repository name, HACS installs the dashboard under `/config/www
 ```
 
 V4.05 installs `gewitterradar.js`, the complete required `assets/` directory and a staged copy of `app_gewitterradar_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.
+
+## Nach dem HACS-Download: Gewitterradar-View anlegen
+
+**Wichtig:** Der HACS-Download installiert die Karte und ihre Assets, legt aber keine Home-Assistant-Dashboard-View für dich an. Nach der Installation muss Gewitterradar einmal in einem Dashboard eingebunden werden.
+
+Prüfe zuerst unter **Einstellungen → Dashboards → Ressourcen**, dass diese Modulressource vorhanden ist:
+
+```text
+/hacsfiles/gewitterradar-dashboard/gewitterradar.js
+```
+
+Lege danach eine neue View an bzw. bearbeite dein gewünschtes Dashboard im YAML-Modus. Ein vollständiges Beispiel ist:
+
+```yaml
+title: Gewitterradar
+path: gewitterradar
+icon: mdi:weather-lightning
+type: panel
+cards:
+  - type: vertical-stack
+    cards:
+      - type: custom:gewitterradar-card
+        counter_entity: sensor.home_lightning_counter
+        radius_entity: input_number.lightning_detection_observation_radius
+        compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
+```
+
+Der eigentliche Kartentyp ist:
+
+```yaml
+type: custom:gewitterradar-card
+```
+
+Die drei Beispiel-Entity-IDs oben entsprechen der bisherigen Package-/Legacy-Konfiguration. Bei einer Installation mit der nativen Gewitterradar-Integration werden die gemeinsame Frontend-/Konfigurationsanbindung und eine vereinfachte Neunutzer-Einrichtung im Rahmen der laufenden Produktkonvergenz vereinheitlicht. Bis diese gemeinsame Auslieferung veröffentlicht ist, gilt die vollständige Installationsanleitung unter [`docs/INSTALLATION_DE.md`](docs/INSTALLATION_DE.md).
 
 The package still requires one manual step when the YAML helper package is used: copy
 
@@ -72,15 +108,9 @@ to
 
 and restart Home Assistant. HACS Dashboard repositories cannot deploy configuration files directly into `/config/packages/`.
 
-Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. **Do not Update or Redownload the stale old HACS Dashboard entry `TheDaimos/gewitterradar`**, because that repository name now belongs to the native Integration. Add and verify `TheDaimos/gewitterradar-dashboard` first, then clean up the stale old Dashboard entry/resource. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) for the safe order.
+Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. **Do not Update or Redownload the stale old HACS Dashboard entry `TheDaimos/gewitterradar`**, because that repository name now belongs to the canonical Gewitterradar product/native Integration. Add and verify `TheDaimos/gewitterradar-dashboard` first, then clean up the stale old Dashboard entry/resource. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) for the safe order.
 
 The canonical package source remains `home-assistant/app_gewitterradar_pkg.yaml`; `dist/app_gewitterradar_pkg.yaml` is a byte-identical convenience copy delivered by HACS together with the card.
-
-The JavaScript card is registered as:
-
-```yaml
-type: custom:gewitterradar-card
-```
 
 ## Release
 
