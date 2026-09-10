@@ -8,11 +8,14 @@ Canonical global defaults:
 
 Before substantial project work in a fresh ChatGPT/Codex session, load the current global defaults first, then this repository's own current guidance/state, then the shared dev-toolkit where applicable.
 
-Preferred bootstrap mnemonic:
+Preferred bootstrap mnemonics, fully equivalent:
 
-> **Deimos**
+> **Deimos**  
+> **Daimos**
 
 Equivalent standalone startup aliases include `start`, `starts`, `start repo`, `start project`, `load defaults`, `check defaults`, and `check repo` as defined by the canonical defaults repository.
+
+All bootstrap aliases are fail-closed: the current `TheDaimos/project-defaults/START_HERE.md` must actually be retrieved and followed before readiness is declared. Do not answer a standalone `Deimos`/`Daimos` from remembered context first.
 
 ## Binding Gewitterradar delivery rule
 
