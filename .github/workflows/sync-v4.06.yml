@@ -1,0 +1,186 @@
+name: Sync and publish Dashboard V4.06
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/sync-v4.06.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-publish-v4-06:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out Dashboard repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preserve frozen public V4.05
+        run: |
+          set -euo pipefail
+          git fetch --force origin refs/tags/v4.05:refs/tags/v4.05
+          expected="44a3a615f76a7d865c2d6c8690728656c18577b9"
+          test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"
+          test "$(git ls-remote --heads origin refs/heads/frozen/v4.05 | awk '{print $1}')" = "${expected}"
+
+      - name: Reconstruct exact canonical V4.06 Dashboard payload
+        run: |
+          set -euo pipefail
+          tmp="${RUNNER_TEMP}/canonical-v406"
+          mkdir -p "${tmp}"
+          curl -fL --retry 3 \
+            "https://github.com/TheDaimos/gewitterradar/archive/refs/tags/v4.06.zip" \
+            -o "${tmp}/v4.06.zip"
+          unzip -q "${tmp}/v4.06.zip" -d "${tmp}"
+          src="$(find "${tmp}" -mindepth 1 -maxdepth 1 -type d -name 'gewitterradar-*' | head -n1)"
+          test -n "${src}"
+
+          (
+            cd "${src}"
+            node scripts/apply-v406-ui-polish-preview.mjs
+            node scripts/apply-v406-ui-polish-pass2-preview.mjs
+            node scripts/apply-v406-ui-polish-pass3-preview.mjs
+            node scripts/apply-v406-ui-polish-pass4-preview.mjs
+            node scripts/apply-v406-ui-polish-pass5-preview.mjs
+            node scripts/apply-v406-release-history-preview.mjs
+            node --check dashboard/dist/gewitterradar.js
+            echo "599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee  dashboard/dist/gewitterradar.js" | sha256sum -c -
+          )
+
+          rm -rf dist
+          cp -a "${src}/dashboard/dist" dist
+          cp "${src}/docs/RELEASE_NOTES_V4_06.md" RELEASE_NOTES_V4_06.md
+          cp "${src}/docs/RECORDER.md" docs/RECORDER.md
+          cp "${src}/docs/HISTORY.md" docs/HISTORY.md
+          cp "${src}/docs/MILESTONES.md" docs/MILESTONES.md
+          cp "${src}/docs/RELEASE_PROCESS.md" docs/RELEASE_PROCESS.md
+
+          test -f dist/gewitterradar.js
+          test -f dist/locales/about-locales.js
+          test -f dist/app_gewitterradar_v4_06_pkg.yaml
+          test -f dist/assets/gewitterradar-about-close-premium.webp
+          test -f dist/assets/gewitterradar-about-copy-scroll.webp
+          test ! -e dist/app_gewitterradar_pkg.yaml
+
+      - name: Refresh derived-repository documentation
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+          text = text.replace('Stable channel: **Latest** — currently **V4.05**', 'Stable channel: **Latest** — currently **V4.06**')
+          text = text.replace(
+              'The V4.04 Dashboard release remains frozen as the verified regression baseline. V4.05 is a new release and does not modify the V4.04 tag or frozen backup branch.',
+              'The published V4.05 Dashboard release remains frozen and unchanged. V4.06 is derived from the canonical `TheDaimos/gewitterradar` V4.06 release and does not rewrite any earlier tag or frozen backup branch.'
+          )
+          text = text.replace(
+              'V4.05 installs `gewitterradar.js`, the complete required `assets/` directory and a staged copy of `app_gewitterradar_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.',
+              'V4.06 installs the final `gewitterradar.js`, the complete required `assets/` directory, `locales/about-locales.js` and the staged helper package `app_gewitterradar_v4_06_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.'
+          )
+          text = text.replace('/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml', '/config/www/community/gewitterradar-dashboard/app_gewitterradar_v4_06_pkg.yaml')
+          text = text.replace('/config/packages/app_gewitterradar_pkg.yaml', '/config/packages/app_gewitterradar_v4_06_pkg.yaml')
+          text = text.replace(
+              'The canonical package source remains `home-assistant/app_gewitterradar_pkg.yaml`; `dist/app_gewitterradar_pkg.yaml` is a byte-identical convenience copy delivered by HACS together with the card.',
+              'The canonical V4.06 package source is maintained in `TheDaimos/gewitterradar`; `dist/app_gewitterradar_v4_06_pkg.yaml` is the derived Dashboard/HACS convenience copy delivered together with the card.'
+          )
+          text = text.replace(
+              'V4.05 promotes the accepted About/Onboarding and visual refinement work to the stable channel. It retains the proven HACS distribution rule: the GitHub release publishes **zero custom release assets**, forcing HACS to install the complete tagged `dist/` tree rather than an incomplete standalone release asset.',
+              'V4.05 remains the protected predecessor. V4.06 publishes the fully validated unified-product Dashboard delivery derived from the canonical V4.06 tag. It retains the proven HACS distribution rule: the GitHub release publishes **zero custom release assets**, forcing HACS to install the complete tagged `dist/` tree rather than an incomplete standalone release asset.'
+          )
+          text = text.replace('See [V4.05 release notes](RELEASE_NOTES_V4_05.md),', 'See [V4.06 release notes](RELEASE_NOTES_V4_06.md),')
+          readme.write_text(text, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          old = changelog.read_text(encoding='utf-8')
+          heading = '# Changelog\n'
+          entry = '''\n## V4.06 · 2026/09 — unified product release\n\n- Derived byte-for-byte final Dashboard frontend from the canonical `TheDaimos/gewitterradar` V4.06 release.\n- Added 15 languages plus 4 dialect variants (19 About/Help variants), Help & Notes, Recorder wildcard guidance and the completed premium device refinements.\n- Added final `YYYY/MM` release chronology, the restored V4.05 History entry and the V4.07 planned worldwide location search.\n- Added lazy `locales/about-locales.js`, premium close/copy assets and versioned `app_gewitterradar_v4_06_pkg.yaml`.\n- Preserved all existing V4.05 and earlier public tags/frozen branches unchanged.\n\n'''
+          if '## V4.06 · 2026/09 — unified product release' not in old:
+              if old.startswith(heading):
+                  old = heading + entry + old[len(heading):]
+              else:
+                  old = heading + entry + old
+              changelog.write_text(old, encoding='utf-8')
+
+          provenance = Path('docs/V4_06_DERIVED_RELEASE.md')
+          provenance.write_text('''# V4.06 derived Dashboard release\n\nThis repository is the public Dashboard/HACS delivery of the unified Gewitterradar product.\n\nV4.06 is derived from canonical release `TheDaimos/gewitterradar@v4.06`. The final Dashboard JavaScript is reconstructed with the canonical accepted UI-polish and release-history delta chain and must have SHA-256:\n\n`599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee`\n\nThe previous public `v4.05` tag and `frozen/v4.05` branch remain fixed at `44a3a615f76a7d865c2d6c8690728656c18577b9`.\n\nV4.06 uses the release-history date convention `YYYY/MM · Vx.xx` for the current status and `Vx.xx · YYYY/MM` for historical entries.\n''', encoding='utf-8')
+          PY
+
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+
+      - name: Install future V4.06 validation workflow
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          Path('.github/workflows/validate.yml').write_text('''name: Validate HACS Dashboard V4.06\n\non:\n  push:\n  pull_request:\n  schedule:\n    - cron: "0 0 * * *"\n  workflow_dispatch:\n\npermissions: {}\n\njobs:\n  verify-dist:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Verify frozen V4.05 remains untouched\n        run: |\n          set -euo pipefail\n          expected="44a3a615f76a7d865c2d6c8690728656c18577b9"\n          test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"\n          test "$(git rev-parse 'refs/remotes/origin/frozen/v4.05^{commit}')" = "${expected}"\n      - name: Verify V4.06 distribution\n        run: |\n          set -euo pipefail\n          node --check dist/gewitterradar.js\n          echo "599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee  dist/gewitterradar.js" | sha256sum -c -\n          test -f dist/locales/about-locales.js\n          test -f dist/app_gewitterradar_v4_06_pkg.yaml\n          test -f dist/assets/gewitterradar-about-close-premium.webp\n          test -f dist/assets/gewitterradar-about-copy-scroll.webp\n          test ! -e dist/app_gewitterradar_pkg.yaml\n          grep -Fq "2026/09 · V4.06 · Gewitterradar · by CK" dist/gewitterradar.js\n          grep -Fq "V4.05 · 2026/09" dist/gewitterradar.js\n          grep -Fq "V4.07 · PLANNED" dist/gewitterradar.js\n          sha256sum -c SHA256SUMS.txt\n\n  validate-hacs:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: hacs/action@main\n        with:\n          category: plugin\n          ignore: license images\n''', encoding='utf-8')
+          PY
+
+      - name: Validate final derived V4.06 tree
+        run: |
+          set -euo pipefail
+          node --check dist/gewitterradar.js
+          echo "599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee  dist/gewitterradar.js" | sha256sum -c -
+          grep -Fq '2026/09 · V4.06 · Gewitterradar · by CK' dist/gewitterradar.js
+          grep -Fq 'V4.05 · 2026/09' dist/gewitterradar.js
+          grep -Fq 'V4.07 · PLANNED' dist/gewitterradar.js
+          grep -Fq '15 Sprachen + 4 Dialektvarianten = 19' RELEASE_NOTES_V4_06.md
+          sha256sum -c SHA256SUMS.txt
+
+      - name: HACS Dashboard validation
+        uses: hacs/action@main
+        with:
+          category: plugin
+          ignore: license images
+
+      - name: Commit derived V4.06 to main
+        id: commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release derived Dashboard V4.06"
+          release_sha="$(git rev-parse HEAD)"
+          echo "sha=${release_sha}" >> "${GITHUB_OUTPUT}"
+          git push origin HEAD:main
+
+      - name: Freeze and publish Dashboard V4.06
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          old="44a3a615f76a7d865c2d6c8690728656c18577b9"
+          test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${old}"
+          test "$(git ls-remote --heads origin refs/heads/frozen/v4.05 | awk '{print $1}')" = "${old}"
+
+          existing="$(git ls-remote --heads origin refs/heads/frozen/v4.06 | awk '{print $1}')"
+          if [ -n "${existing}" ]; then
+            test "${existing}" = "${RELEASE_SHA}"
+          else
+            git push origin "${RELEASE_SHA}:refs/heads/frozen/v4.06"
+          fi
+
+          if gh release view v4.06 --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Dashboard V4.06 already exists; verifying only."
+          else
+            gh release create v4.06 \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${RELEASE_SHA}" \
+              --title "Gewitterradar V4.06" \
+              --notes-file RELEASE_NOTES_V4_06.md \
+              --latest
+          fi
+
+          git fetch --force origin refs/tags/v4.06:refs/tags/v4.06
+          test "$(git rev-parse 'refs/tags/v4.06^{commit}')" = "${RELEASE_SHA}"
+          test "$(git ls-remote --heads origin refs/heads/frozen/v4.06 | awk '{print $1}')" = "${RELEASE_SHA}"
+          test "$(gh release view v4.06 --repo "${GITHUB_REPOSITORY}" --json targetCommitish --jq '.targetCommitish')" = "${RELEASE_SHA}"
