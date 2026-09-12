@@ -115,14 +115,6 @@ jobs:
 
           find dist -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
 
-      - name: Install future V4.06 validation workflow
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          Path('.github/workflows/validate.yml').write_text('''name: Validate HACS Dashboard V4.06\n\non:\n  push:\n  pull_request:\n  schedule:\n    - cron: "0 0 * * *"\n  workflow_dispatch:\n\npermissions: {}\n\njobs:\n  verify-dist:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Verify frozen V4.05 remains untouched\n        run: |\n          set -euo pipefail\n          expected="44a3a615f76a7d865c2d6c8690728656c18577b9"\n          test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"\n          test "$(git rev-parse 'refs/remotes/origin/frozen/v4.05^{commit}')" = "${expected}"\n      - name: Verify V4.06 distribution\n        run: |\n          set -euo pipefail\n          node --check dist/gewitterradar.js\n          echo "599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee  dist/gewitterradar.js" | sha256sum -c -\n          test -f dist/locales/about-locales.js\n          test -f dist/app_gewitterradar_v4_06_pkg.yaml\n          test -f dist/assets/gewitterradar-about-close-premium.webp\n          test -f dist/assets/gewitterradar-about-copy-scroll.webp\n          test ! -e dist/app_gewitterradar_pkg.yaml\n          grep -Fq '${BUILD_YYYY_MM} · V${CARD_VERSION} · Gewitterradar · by CK' dist/gewitterradar.js\n          grep -Fq "V4.05 · 2026/09" dist/gewitterradar.js\n          grep -Fq "V4.07 · PLANNED" dist/gewitterradar.js\n          sha256sum -c SHA256SUMS.txt\n\n  validate-hacs:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: hacs/action@main\n        with:\n          category: plugin\n          ignore: license images\n''', encoding='utf-8')
-          PY
-
       - name: Validate final derived V4.06 tree
         run: |
           set -euo pipefail
@@ -146,7 +138,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add dist RELEASE_NOTES_V4_06.md README.md CHANGELOG.md SHA256SUMS.txt docs/RECORDER.md docs/HISTORY.md docs/MILESTONES.md docs/RELEASE_PROCESS.md docs/V4_06_DERIVED_RELEASE.md
           git commit -m "Release derived Dashboard V4.06"
           release_sha="$(git rev-parse HEAD)"
           echo "sha=${release_sha}" >> "${GITHUB_OUTPUT}"
