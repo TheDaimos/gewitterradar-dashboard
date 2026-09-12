@@ -2,7 +2,7 @@
 
 **Gewitterradar** is a Home Assistant dashboard card for live lightning and thunderstorm visualization using data supplied by the Home Assistant Blitzortung.org integration.
 
-Stable channel: **Latest** — currently **V4.05**
+Stable channel: **Latest** — currently **V4.06**
 
 ## Repository role
 
@@ -13,7 +13,7 @@ Current public delivery repositories:
 - **Canonical product / native Home Assistant Integration:** `TheDaimos/gewitterradar`
 - **Derived Dashboard/Card delivery:** this repository, `TheDaimos/gewitterradar-dashboard`
 
-The V4.04 Dashboard release remains frozen as the verified regression baseline. V4.05 is a new release and does not modify the V4.04 tag or frozen backup branch.
+The published V4.05 Dashboard release remains frozen and unchanged. V4.06 is derived from the canonical `TheDaimos/gewitterradar` V4.06 release and does not rewrite any earlier tag or frozen backup branch.
 
 ## Highlights
 
@@ -58,7 +58,7 @@ With the current repository name, HACS installs the dashboard under `/config/www
 /hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
-V4.05 installs `gewitterradar.js`, the complete required `assets/` directory and a staged copy of `app_gewitterradar_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.
+V4.06 installs the final `gewitterradar.js`, the complete required `assets/` directory, `locales/about-locales.js` and the staged helper package `app_gewitterradar_v4_06_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.
 
 ## Nach dem HACS-Download: Gewitterradar-View anlegen
 
@@ -97,30 +97,30 @@ Die drei Beispiel-Entity-IDs oben entsprechen der bisherigen Package-/Legacy-Kon
 The package still requires one manual step when the YAML helper package is used: copy
 
 ```text
-/config/www/community/gewitterradar-dashboard/app_gewitterradar_pkg.yaml
+/config/www/community/gewitterradar-dashboard/app_gewitterradar_v4_06_pkg.yaml
 ```
 
 to
 
 ```text
-/config/packages/app_gewitterradar_pkg.yaml
+/config/packages/app_gewitterradar_v4_06_pkg.yaml
 ```
 
 and restart Home Assistant. HACS Dashboard repositories cannot deploy configuration files directly into `/config/packages/`.
 
 Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. **Do not Update or Redownload the stale old HACS Dashboard entry `TheDaimos/gewitterradar`**, because that repository name now belongs to the canonical Gewitterradar product/native Integration. Add and verify `TheDaimos/gewitterradar-dashboard` first, then clean up the stale old Dashboard entry/resource. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) for the safe order.
 
-The canonical package source remains `home-assistant/app_gewitterradar_pkg.yaml`; `dist/app_gewitterradar_pkg.yaml` is a byte-identical convenience copy delivered by HACS together with the card.
+The canonical V4.06 package source is maintained in `TheDaimos/gewitterradar`; `dist/app_gewitterradar_v4_06_pkg.yaml` is the derived Dashboard/HACS convenience copy delivered together with the card.
 
 ## Release
 
 V4.04 remains frozen at commit `8ada0e06aef47627d31224b9e46d58de459fb24b`. The `v4.04` tag and `frozen/v4.04` backup branch are checked by CI against that exact commit.
 
-V4.05 promotes the accepted About/Onboarding and visual refinement work to the stable channel. It retains the proven HACS distribution rule: the GitHub release publishes **zero custom release assets**, forcing HACS to install the complete tagged `dist/` tree rather than an incomplete standalone release asset.
+V4.05 remains the protected predecessor. V4.06 publishes the fully validated unified-product Dashboard delivery derived from the canonical V4.06 tag. It retains the proven HACS distribution rule: the GitHub release publishes **zero custom release assets**, forcing HACS to install the complete tagged `dist/` tree rather than an incomplete standalone release asset.
 
 Stable Dashboard releases are published as GitHub **Latest** releases. See [Release policy](docs/RELEASE_POLICY.md).
 
-See [V4.05 release notes](RELEASE_NOTES_V4_05.md), [CHANGELOG.md](CHANGELOG.md), and the [V4.04 HACS package-staging note](docs/HACS_V4_04_PACKAGE_STAGING.md) for the unchanged package-delivery model.
+See [V4.06 release notes](RELEASE_NOTES_V4_06.md), [CHANGELOG.md](CHANGELOG.md), and the [V4.04 HACS package-staging note](docs/HACS_V4_04_PACKAGE_STAGING.md) for the unchanged package-delivery model.
 
 ## Data source
 

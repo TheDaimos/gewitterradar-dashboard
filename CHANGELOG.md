@@ -1,5 +1,14 @@
 # Changelog
 
+## V4.06 · 2026/09 — unified product release
+
+- Derived byte-for-byte final Dashboard frontend from the canonical `TheDaimos/gewitterradar` V4.06 release.
+- Added 15 languages plus 4 dialect variants (19 About/Help variants), Help & Notes, Recorder wildcard guidance and the completed premium device refinements.
+- Added final `YYYY/MM` release chronology, the restored V4.05 History entry and the V4.07 planned worldwide location search.
+- Added lazy `locales/about-locales.js`, premium close/copy assets and versioned `app_gewitterradar_v4_06_pkg.yaml`.
+- Preserved all existing V4.05 and earlier public tags/frozen branches unchanged.
+
+
 > **Current repository note (2026-09-06):** The Dashboard repository was renamed from `TheDaimos/gewitterradar` to `TheDaimos/gewitterradar-dashboard`, while the old repository name was reused for the new native Home Assistant Integration. Current HACS Dashboard installations therefore use `/config/www/community/gewitterradar-dashboard/` and `/hacsfiles/gewitterradar-dashboard/`. Existing pre-rename HACS Dashboard entries must not be updated or redownloaded under the stale old repository name; follow [`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md) for the safe migration order. The frozen V4.04 application artifacts themselves remain unchanged.
 
 > **Distribution status:** V4.00, V4.01 and V4.02 are no longer published as installable HACS releases. V4.03 is the first working HACS distribution. V4.04 remains the frozen regression baseline; V4.05 is the current recommended release.

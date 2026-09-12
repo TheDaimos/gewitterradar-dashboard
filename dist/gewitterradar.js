@@ -4,8 +4,12 @@
 (function () {
   if (customElements.get('gewitterradar-card')) return;
 
-  const CARD_VERSION = '4.05';
-  const GEWITTERRADAR_BUILD = 'V4.05-2026-09-07';
+  const CARD_VERSION = '4.06';
+  const GEWITTERRADAR_BUILD = 'V4.06-2026-09-10';
+  const BUILD_YYYY_MM = (() => {
+    const match = GEWITTERRADAR_BUILD.match(/(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? match[1] + '/' + match[2] : '0000/00';
+  })();
   const LEAFLET_JS = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
   const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
@@ -48,22 +52,24 @@
     { id:'candidate_06', uiIndex:6, type:'frame', label:'Candidate 06', frame:COMPASS_METAL_FRAME_V5_IMAGE, visualStageScale:1.059, outerAlphaRatio:[.929825,.922648], fitContour:'protected circular opening', outerOverhangs:'four screw bosses and decorative outer metal', intrusionAngles:[0,90,180,270], calibrationRound:[626.22/1254,603.41/1254,414.42/1254], roundFitMode:'protected', local:true }
   ];
   const COMPASS_DESIGN_STORAGE_KEY = 'gewitterradar-last-compass-design';
+  const LANGUAGE_INITIALIZATION_ENTITIES = Object.freeze({native:'switch.gewitterradar_language_initialized',legacy:'input_boolean.lightning_detection_language_initialized'});
+  let languageOnboardingOwner = null;
   const ABOUT_ONBOARDING_VERSION = 1;
   const ABOUT_STORAGE_KEY = 'gewitterradar-about-onboarding-version';
   let aboutClaimedVersion = 0;
   const ABOUT_LOGO = new URL('./assets/gewitterradar-brand-icon.png?v=404', import.meta.url).href;
   const ABOUT_HERO_IMAGE = new URL('./assets/gewitterradar-about-hero-v2.webp', import.meta.url).href;
   const ABOUT_DEDICATION_IMAGE = new URL('./assets/gewitterradar-about-dedication-v4.webp', import.meta.url).href;
-  const ABOUT_DEDICATION = 'Danke, dass du mir die Zeit lässt, meinen Interessen und meiner Begeisterung für Technik, Wetter und all den Ideen dazwischen nachzugehen – und mich Projekten wie Gewitterradar mit so viel Freude und Ausdauer zu widmen.';
+  const ABOUT_CLOSE_IMAGE = new URL('./assets/gewitterradar-about-close-premium.webp', import.meta.url).href;
+  const ABOUT_COPY_IMAGE = new URL('./assets/gewitterradar-about-copy-scroll.webp', import.meta.url).href;
   // Kept byte-for-byte in sync with the fenced YAML in docs/RECORDER.md by the build gate.
   const ABOUT_RECORDER_YAML = `recorder:
   exclude:
     entity_globs:
       - "geo_location.lightning_strike*"
-    entities:
-      - sensor.home_lightning_distance
-      - sensor.home_lightning_azimuth
-      - sensor.home_lightning_counter`;
+      - "sensor.*_lightning_distance"
+      - "sensor.*_lightning_azimuth"
+      - "sensor.*_lightning_counter"`;
   const ABOUT_STRINGS = {
     Deutsch: {
       title:'Über Gewitterradar', close:'Schließen', understood:'Verstanden',
@@ -75,7 +81,7 @@
       observation:'Frühe Beobachtung entfernter Gewitter im weiteren Umfeld.',
       storm:'Nähere Gewitteraktivität, die erhöhte Aufmerksamkeit erfordert.',
       danger:'Unmittelbarer Nahbereich mit besonders kritischer Relevanz.',
-      radiusInfo:'Die Radien helfen, Gewitter frühzeitig einzuschätzen und die aktuelle Situation schnell und übersichtlich zu beurteilen.',
+      radiusInfo:'Die Radien helfen, Gewitter frühzeitig einzuschätzen und die aktuelle Situation schnell und übersichtlich zu beurteilen. Die Radien bauen aufeinander auf: Ein Blitz im Gefahrenradius zählt zugleich zum Gewitter- und Beobachtungsradius.',
       thanks:'Dank an Blitzortung.org',
       network:'Ein besonderer Dank gilt Blitzortung.org und seiner weltweiten Community freiwilliger Stationsbetreiber. Gewitterradar nutzt Blitzdaten, die durch dieses gemeinschaftlich betriebene Ortungsnetz bereitgestellt werden.',
       recorder:'Wichtiger Hinweis zum Home-Assistant-Recorder',
@@ -84,37 +90,39 @@
       copy:'YAML kopieren', copied:'Kopiert', copyFailed:'Kopieren nicht möglich – bitte den Code markieren.', later:'Später erneut ansehen',
       merge:'Falls bereits ein recorder:-Abschnitt existiert, integriere die Einträge dort. Lege KEINEN zweiten Top-Level-recorder:-Block an.',
       live:'Der Recorder-Ausschluss deaktiviert NICHT die Live-Zustände für Gewitterradar. Bestehende historische Daten werden nicht automatisch entfernt.',
-      entities:'Verwendete Entitäten & Funktionen', entitiesSubtitle:'Eine Übersicht aller verwendeten Entitäten und ihrer Funktionen.', native:'Native Gewitterradar-Konfiguration', legacy:'Legacy-Fallback / Kompatibilität',
+      entities:'Verwendete Entitäten & Funktionen', entitiesSubtitle:'Eine Übersicht aller verwendeten Entitäten und ihrer Funktionen.', native:'Native Gewitterradar-Konfiguration', sourceNative:'Native', legacy:'Legacy-Fallback / Kompatibilität',
       legacyPurpose:'Dient nur als Kompatibilitäts-Fallback.', locationPerson:'Stellt wählbare Personenstandorte bereit.', locationZone:'Stellt wählbare Zonen als Referenz bereit.',
       legacyText:'Die bestehenden lightning_detection_* Helfer dienen der Kompatibilität. Für eine frische native Installation sind sie nicht erforderlich.',
       resolved:'Aktuell aufgelöst', available:'verfügbar', unavailable:'nicht verfügbar', override:'Card-Konfiguration',
       sources:'Blitzdatenquellen', locations:'Standortquellen', dynamic:'person.* und zone.* werden dynamisch ermittelt.',
+      dedicationTitle:'Für Alkje', dedicationText:'Danke, dass du mir die Zeit lässt, meinen Interessen und meiner Begeisterung für Technik, Wetter und all den Ideen dazwischen nachzugehen – und mich Projekten wie Gewitterradar mit so viel Freude und Ausdauer zu widmen.',
       footer:'Jederzeit über Einstellungen → Über Gewitterradar erneut aufrufbar.'
     },
     English: {
       title:'About Gewitterradar', close:'Close', understood:'Understood',
-      subtitle:'Storms. Data. Safety. Our shared passion.', claim:'Observe nature. Live safely.', welcome:'Welcome, weather enthusiasts!',
-      intro:'This project is for everyone fascinated by thunderstorms, lightning, weather and the dynamics of our atmosphere. Gewitterradar helps you understand nature, recognise developments early and observe them with respect. We are glad you are part of this community!',
-      quote:'“Every storm holds a story.”',
-      radii:'The three radii', radiiTagline:'Three areas. A clear overview.', schematic:'Schematic radius diagram, not to scale',
-      observation:'Early observation of distant storms in the wider surroundings.',
-      storm:'Closer storm activity calling for increased attention.',
+      subtitle:'For weather enthusiasts who want to follow lightning activity in a clear and easy-to-understand way.', claim:'Observe thunderstorms, discover how they develop.', welcome:'Welcome, weather enthusiasts!',
+      intro:'This project is for everyone fascinated by thunderstorms, lightning, weather phenomena and the fascinating dynamics of our atmosphere. Gewitterradar helps you understand nature better, recognise developments early and observe them with respect. It’s great to have you as part of this community!',
+      quote:'Thunderstorms reveal just how powerful the atmosphere can be.',
+      radii:'The three radii', radiiTagline:'Three areas. One clear overview.', schematic:'Schematic representation of the radii, not to scale',
+      observation:'Early observation of distant thunderstorms in the wider area.',
+      storm:'Closer thunderstorm activity that requires increased attention.',
       danger:'Immediate vicinity with particularly critical relevance.',
-      radiusInfo:'The radii help you assess approaching thunderstorms early and understand the current situation at a glance.',
+      radiusInfo:'The radii help you assess thunderstorms early and understand the current situation quickly and clearly. The radii build on one another: a strike within the danger radius also counts within the storm and observation radii.',
       thanks:'Thanks to Blitzortung.org',
-      network:'Special thanks to Blitzortung.org and the worldwide network of volunteer station operators. The lightning data used by Gewitterradar is made possible by this community-operated detection network.',
+      network:'Special thanks go to Blitzortung.org and its worldwide community of volunteer station operators. Gewitterradar uses lightning data provided by this community-operated detection network.',
       recorder:'Important note about the Home Assistant Recorder',
-      recorderText:'To prevent excessive Home Assistant database growth, exclude these four rapidly changing lightning sources from Recorder in configuration.yaml. Merge into any existing recorder: section — do not add a second top-level recorder: block. Live states remain available to Gewitterradar.',
+      recorderText:'To limit database growth, we strongly recommend excluding these four sources from Recorder in configuration.yaml. Add them to an existing recorder: section – do not create a second top-level block. Live states remain available.',
       recorderBenefit:'Less data.\nA leaner system.\nFor long-term operation.',
       copy:'Copy YAML', copied:'Copied', copyFailed:'Copy unavailable — please select the code.', later:'View again later',
-      merge:'If a recorder: section already exists, merge these entries into it. Do NOT create a second top-level recorder: block.',
+      merge:'If a recorder: section already exists, integrate these entries there. Do NOT create a second top-level recorder: block.',
       live:'Recorder exclusion does NOT disable live states for Gewitterradar. Existing historical data is not removed automatically.',
-      entities:'Entities & functions used', entitiesSubtitle:'An overview of the entities used and their functions.', native:'Native Gewitterradar configuration', legacy:'Legacy fallback / compatibility',
-      legacyPurpose:'Used only as a compatibility fallback.', locationPerson:'Provides selectable person locations.', locationZone:'Provides selectable reference zones.',
-      legacyText:'Existing lightning_detection_* helpers provide compatibility. They are not required for a fresh native installation.',
+      entities:'Entities & functions used', entitiesSubtitle:'An overview of all entities used and their functions.', native:'Native Gewitterradar configuration', sourceNative:'Native', legacy:'Legacy fallback / compatibility',
+      legacyPurpose:'Used only as a compatibility fallback.', locationPerson:'Provides selectable person locations.', locationZone:'Provides selectable zones as reference locations.',
+      legacyText:'The existing lightning_detection_* helpers are provided for compatibility. They are not required for a fresh native installation.',
       resolved:'Currently resolved', available:'available', unavailable:'unavailable', override:'Card configuration',
       sources:'Lightning data sources', locations:'Location sources', dynamic:'person.* and zone.* are discovered dynamically.',
-      footer:'Available any time under Settings → About Gewitterradar.'
+      dedicationTitle:'For Alkje', dedicationText:'Thank you for giving me the time to pursue the interests and enthusiasm I have for technology, weather, and all the ideas in between – and to devote myself to projects like Gewitterradar with so much joy and perseverance.',
+      footer:'Available at any time under Settings → About Gewitterradar.'
     }
   };
   // IDs come exclusively from SETTING_ENTITIES; these accessors preserve explicit card overrides.
@@ -127,16 +135,16 @@
     compass_device_orientation:'_deviceOrientationEntity', map_grouping:'_mapGroupingEntity'
   };
   const ABOUT_SETTING_LABELS = {
-    Deutsch:['Sprache','Distanzeinheit','Kompassdesign','Referenzstandort','Beobachtungsradius','Gewitterradius','Gefahrenradius','Aura-Breite','Aura-Intensität','Aura-Effekte','Warnanimation','Gewittersimulation','Standortauswahl','Kompass: nächster Blitz','Geräteorientierung','Kartengruppierung'],
-    English:['Language','Distance unit','Compass design','Reference location','Observation radius','Storm radius','Danger radius','Aura width','Aura intensity','Aura effects','Warning animation','Storm simulation','Location selector','Compass: nearest strike','Device orientation','Map grouping']
+    Deutsch:{language:'Sprache',distance_unit:'Distanzeinheit',compass_design:'Kompassdesign',reference_location:'Referenzstandort',observation_radius:'Beobachtungsradius',storm_radius:'Gewitterradius',danger_radius:'Gefahrenradius',aura_width:'Aura-Breite',aura_intensity:'Aura-Intensität',aura_effects:'Aura-Effekte',warning_animation:'Warnanimation',storm_simulation:'Gewittersimulation',show_location_selector:'Standortauswahl',compass_nearest_strike:'Kompass: nächster Blitz',compass_device_orientation:'Geräteorientierung',map_grouping:'Kartengruppierung'},
+    English:{language:'Language',distance_unit:'Distance unit',compass_design:'Compass design',reference_location:'Reference location',observation_radius:'Observation radius',storm_radius:'Storm radius',danger_radius:'Danger radius',aura_width:'Aura width',aura_intensity:'Aura intensity',aura_effects:'Aura effects',warning_animation:'Warning animation',storm_simulation:'Storm simulation',show_location_selector:'Location selector',compass_nearest_strike:'Compass: nearest strike',compass_device_orientation:'Device orientation',map_grouping:'Map grouping'}
   };
   const ABOUT_SETTING_PURPOSES = {
-    Deutsch:['Wählt die Sprache der Karte.','Legt KM oder MI fest.','Wählt das Kompassdesign.','Bestimmt den Referenzstandort.','Legt den äußeren Beobachtungsbereich fest.','Definiert den Bereich erhöhter Gewitteraktivität.','Definiert den unmittelbaren Gefahrenbereich.','Steuert die Breite des Aura-Effekts.','Steuert die Stärke des Aura-Effekts.','Schaltet Aura-Effekte ein oder aus.','Aktiviert die Warnanimation.','Aktiviert die Gewittersimulation.','Erlaubt die Standortauswahl.','Richtet den Kompass auf den nächsten Blitz.','Nutzt die Geräteausrichtung.','Gruppiert nahe Blitze auf der Karte.'],
-    English:['Selects the card language.','Sets KM or MI.','Selects the compass design.','Sets the reference location.','Sets the outer observation area.','Defines the area of increased storm activity.','Defines the immediate danger area.','Controls aura effect width.','Controls aura effect intensity.','Turns aura effects on or off.','Enables warning animation.','Enables storm simulation.','Enables location selection.','Points to the nearest strike.','Uses device orientation.','Groups nearby strikes on the map.']
+    Deutsch:{language:'Wählt die Sprache der Karte.',distance_unit:'Legt KM oder MI fest.',compass_design:'Wählt das Kompassdesign.',reference_location:'Bestimmt den Referenzstandort.',observation_radius:'Legt den äußeren Beobachtungsbereich fest.',storm_radius:'Definiert den Bereich erhöhter Gewitteraktivität.',danger_radius:'Definiert den unmittelbaren Gefahrenbereich.',aura_width:'Steuert die Breite des Aura-Effekts.',aura_intensity:'Steuert die Stärke des Aura-Effekts.',aura_effects:'Schaltet Aura-Effekte ein oder aus.',warning_animation:'Aktiviert die Warnanimation.',storm_simulation:'Aktiviert die Gewittersimulation.',show_location_selector:'Erlaubt die Standortauswahl.',compass_nearest_strike:'Richtet den Kompass auf den nächsten Blitz.',compass_device_orientation:'Nutzt die Geräteausrichtung.',map_grouping:'Gruppiert nahe Blitze auf der Karte.'},
+    English:{language:'Selects the card language.',distance_unit:'Sets KM or MI.',compass_design:'Selects the compass design.',reference_location:'Sets the reference location.',observation_radius:'Sets the outer observation area.',storm_radius:'Defines the area of increased storm activity.',danger_radius:'Defines the immediate danger area.',aura_width:'Controls aura effect width.',aura_intensity:'Controls aura effect intensity.',aura_effects:'Turns aura effects on or off.',warning_animation:'Enables warning animation.',storm_simulation:'Enables storm simulation.',show_location_selector:'Enables location selection.',compass_nearest_strike:'Points the compass to the nearest strike.',compass_device_orientation:'Uses device orientation.',map_grouping:'Groups nearby strikes on the map.'}
   };
   const ABOUT_SOURCE_PURPOSES = {
-    Deutsch:['Liefert einzelne Blitzpositionen.','Liefert die Entfernung zum letzten Blitz.','Liefert die Richtung zum letzten Blitz.','Zählt erkannte Blitzereignisse.'],
-    English:['Provides individual strike positions.','Provides distance to the latest strike.','Provides direction to the latest strike.','Counts detected lightning events.']
+    Deutsch:{'geo_location.lightning_strike*':'Liefert einzelne Blitzpositionen.','sensor.*_lightning_distance':'Liefert die Entfernung zum letzten Blitz.','sensor.*_lightning_azimuth':'Liefert die Richtung zum letzten Blitz.','sensor.*_lightning_counter':'Zählt erkannte Blitzereignisse.'},
+    English:{'geo_location.lightning_strike*':'Provides individual strike positions.','sensor.*_lightning_distance':'Provides distance to the latest strike.','sensor.*_lightning_azimuth':'Provides direction to the latest strike.','sensor.*_lightning_counter':'Counts detected lightning events.'}
   };
   const MEDALLION_DESIGNS = [{
     id:'trend_01',asset:TREND_MEDALLION_IMAGE,type:'image',size:'132px',x:'0px',y:'0px',
@@ -393,6 +401,33 @@
     map_grouping: { native:'switch.gewitterradar_map_grouping', legacy:'input_boolean.lightning_detection_map_grouping' }
   });
 
+  const HELP_STRINGS = {
+    Deutsch: {
+      menuTitle:'Hilfe & Hinweise', title:'Hilfe & Hinweise', subtitle:'Kurz erklärt, damit Gewitterradar zuverlässig und nachvollziehbar arbeitet.', close:'Hilfe schließen', copy:'YAML kopieren', copied:'Kopiert', copyFailed:'Kopieren nicht möglich – bitte den Code markieren.',
+      sections:[
+        {key:'prerequisites',title:'Voraussetzungen',paragraphs:['Gewitterradar verarbeitet die Blitzdaten, die Home Assistant von der verwendeten Blitzortung-Datenquelle erhält. Prüfe dort den richtigen Referenzstandort und stelle den Quellradius mindestens so groß wie den Beobachtungsradius in Gewitterradar ein. Gewitterradar kann keine Blitze anzeigen oder auswerten, die von der Datenquelle bereits herausgefiltert wurden.'],notes:['Wenn mehrere Blitzortung-Geräte oder Beobachtungspunkte vorhanden sind, müssen die verwendeten Entitäten eindeutig zum gewünschten Referenzpunkt passen.']},
+        {key:'radii',title:'Die Radien',paragraphs:['Die Radien bauen aufeinander auf: Ein Blitz im Gefahrenradius zählt gleichzeitig zum Gewitter- und Beobachtungsradius. Die Bereiche sind Entfernungsschwellen, keine voneinander getrennten Datenquellen.'],items:['Beobachtungsradius – äußerer Bereich für frühe Beobachtung.','Gewitterradius – näherer Bereich mit erhöhter Aufmerksamkeit.','Gefahrenradius – unmittelbarer Nahbereich mit besonders hoher Relevanz.'],notes:['Der Gefahrenradius ist auf maximal 250 km begrenzt.']},
+        {key:'location',title:'Referenzstandort',paragraphs:['Der Referenzstandort bestimmt, von welchem Punkt aus Entfernungen und Richtungen berechnet werden. Gewitterradar erkennt person.*- und zone.*-Entitäten dynamisch. Ändert sich der Standort einer Person, werden Entfernungen auf Basis der aktuellen Home-Assistant-Daten neu bewertet.'],notes:['Ein falscher Referenzstandort führt zu falschen Entfernungen, Radien und Kompassrichtungen.']},
+        {key:'functions',title:'Wichtige Funktionen',entries:[['Aura-Effekte','visualisieren Blitzaktivität, verändern aber nicht die Erkennung oder Zählung.'],['Warnanimation','hebt relevante Gewitteraktivität optisch hervor.'],['Kartengruppierung','fasst nahe Blitzmarker zusammen und hält die Karte übersichtlicher.'],['Kompass: nächster Blitz','richtet die Anzeige auf den nächstgelegenen erkannten Blitz.'],['Geräteorientierung','kann auf unterstützten Mobilgeräten die Geräteausrichtung einbeziehen.'],['Gewittersimulation','ist ausschließlich für Test und Diagnose gedacht und sollte im normalen Betrieb ausgeschaltet bleiben.']]},
+        {key:'defaults',title:'Empfohlene Grundeinstellungen',paragraphs:['Für einen stabilen Start empfehlen wir:'],items:['Quellradius der Blitzortung-Datenquelle mindestens so groß wie den Gewitterradar-Beobachtungsradius einstellen.','Kartengruppierung eingeschaltet lassen.','Warnanimation eingeschaltet lassen.','Aura-Effekte nach persönlichem Geschmack einstellen; sie beeinflussen die Erkennung nicht.','Gewittersimulation im normalen Betrieb ausgeschaltet lassen.','Geräteorientierung nur aktivieren, wenn sie auf dem verwendeten Mobilgerät benötigt wird.']},
+        {key:'troubleshooting',title:'Wenn etwas nicht stimmt',entries:[['Keine oder zu wenige Blitze','Status der Blitzortung-Datenquelle, Quellradius und verwendete Blitz-Entitäten prüfen.'],['Entfernungen oder Richtungen wirken falsch','Referenzstandort und Distanzeinheit prüfen.'],['Sprachauswahl erscheint immer wieder','Prüfen, ob das aktuelle Gewitterradar-Package installiert ist und der Initialisierungshelfer vorhanden ist.'],['Darstellung nach Update unverändert','Browser-/App-Cache vollständig neu laden und sicherstellen, dass die aktuelle JavaScript-Datei verwendet wird.'],['Merkwürdiges Verhalten oder doppelte Karte','In Home Assistant darf nur EINE Gewitterradar-Modulressource aktiv sein. Native Integration und Dashboard-/HACS-Ressource dürfen nicht gleichzeitig dieselbe Custom Card registrieren.']]},
+        {key:'recorder',title:'Home-Assistant-Recorder',paragraphs:['Blitzdaten können sehr viele Zustandsänderungen erzeugen. Für einen langfristig schlanken Recorder empfehlen wir, die folgenden Entitäten bzw. Entitätsmuster auszuschließen.'],recorder:true,notes:['Falls bereits ein recorder:-Abschnitt existiert, diese Einträge dort ergänzen. Keinen zweiten Top-Level-recorder:-Block anlegen.','Die Ausschlüsse deaktivieren NICHT die Live-Zustände für Gewitterradar.','Bereits vorhandene historische Daten werden dadurch nicht automatisch gelöscht.','Die Wildcards unterstützen mehrere Blitzortung-Geräte bzw. Beobachtungspunkte unabhängig vom Entity-Präfix.']}
+      ]
+    },
+    English: {
+      menuTitle:'Help & Notes', title:'Help & Notes', subtitle:'A concise guide to keep Gewitterradar reliable and easy to understand.', close:'Close help', copy:'Copy YAML', copied:'Copied', copyFailed:'Copy unavailable — please select the code.',
+      sections:[
+        {key:'prerequisites',title:'Prerequisites',paragraphs:['Gewitterradar processes the lightning data that Home Assistant receives from the configured lightning-detection source. Verify the correct reference location there and set the source radius at least as large as the observation radius in Gewitterradar. Gewitterradar cannot display or evaluate strikes that have already been filtered out by the source.'],notes:['If several lightning-detection devices or observation points are available, make sure the entities used belong to the intended reference point.']},
+        {key:'radii',title:'The radii',paragraphs:['The radii are cumulative: a strike inside the danger radius also counts inside the storm radius and the observation radius. The areas are distance thresholds, not separate data sources.'],items:['Observation radius – outer area for early observation.','Storm radius – closer area requiring increased attention.','Danger radius – immediate vicinity with particularly high relevance.'],notes:['The danger radius is limited to a maximum of 250 km.']},
+        {key:'location',title:'Reference location',paragraphs:["The reference location determines the point from which distances and directions are calculated. Gewitterradar detects person.* and zone.* entities dynamically. When a person's location changes, distances are recalculated from the current Home Assistant data."],notes:['An incorrect reference location leads to incorrect distances, radius evaluation and compass directions.']},
+        {key:'functions',title:'Key functions',entries:[['Aura effects','visualize lightning activity but do not change detection or counting.'],['Warning animation','visually highlights relevant thunderstorm activity.'],['Map grouping','combines nearby strike markers to keep the map clear.'],['Compass: nearest strike','points the display toward the nearest detected strike.'],['Device orientation','can use device orientation on supported mobile devices.'],['Storm simulation','is intended only for testing and diagnostics and should remain disabled during normal operation.']]},
+        {key:'defaults',title:'Recommended defaults',paragraphs:['For a stable starting point we recommend:'],items:['Set the lightning source radius at least as large as the Gewitterradar observation radius.','Keep map grouping enabled.','Keep warning animation enabled.','Adjust aura effects to personal preference; they do not affect detection.','Keep storm simulation disabled during normal operation.','Enable device orientation only when it is needed on the mobile device being used.']},
+        {key:'troubleshooting',title:'If something is not working',entries:[['No or too few strikes','Check the lightning-detection source status, source radius and the lightning entities being used.'],['Distances or directions look wrong','Check the reference location and distance unit.'],['Language selection keeps returning','Verify that the current Gewitterradar package is installed and that the language initialization helper exists.'],['Display unchanged after an update','Fully reload the browser/app cache and make sure the current JavaScript file is being used.'],['Unexpected behavior or duplicate card','Only ONE Gewitterradar module resource may be active in Home Assistant. The native integration and the Dashboard/HACS resource must not register the same custom card at the same time.']]},
+        {key:'recorder',title:'Home Assistant Recorder',paragraphs:['Lightning data can generate a very high number of state changes. For a lean long-term Recorder configuration, we recommend excluding the following entities and entity patterns.'],recorder:true,notes:['If a recorder: section already exists, merge these entries into it. Do not create a second top-level recorder: block.','These exclusions do NOT disable live states used by Gewitterradar.','Existing historical data is not removed automatically.','The wildcard patterns support multiple lightning-detection devices or observation points regardless of their entity prefix.']}
+      ]
+    }
+  };
+
   const LANGUAGE_DEFINITIONS = [
     { value:'Deutsch', code:'de', locale:'de-DE', group:'main' },
     { value:'English', code:'en', locale:'en-GB', group:'main' },
@@ -414,6 +449,125 @@
     { value:'Sächs’sch', code:'sx', locale:'de-DE', group:'fun' },
     { value:'Schwäbisch', code:'swg', locale:'de-DE', group:'fun' }
   ];
+
+  // One resolved bundle owns every About text. Existing tables are only data inputs.
+  // Deutsch/English stay native; other registered languages are loaded as one module on About demand.
+  const ABOUT_LOCALES = {
+    Deutsch: {
+      strings: ABOUT_STRINGS.Deutsch,
+      settingLabels: ABOUT_SETTING_LABELS.Deutsch,
+      settingPurposes: ABOUT_SETTING_PURPOSES.Deutsch,
+      sourcePurposes: ABOUT_SOURCE_PURPOSES.Deutsch,
+      help: HELP_STRINGS.Deutsch
+    },
+    English: {
+      strings: ABOUT_STRINGS.English,
+      settingLabels: ABOUT_SETTING_LABELS.English,
+      settingPurposes: ABOUT_SETTING_PURPOSES.English,
+      sourcePurposes: ABOUT_SOURCE_PURPOSES.English,
+      help: HELP_STRINGS.English
+    }
+  };
+  const ABOUT_EXTERNAL_LANGUAGE_NAMES = new Set(LANGUAGE_DEFINITIONS
+    .map(entry => entry.value).filter(name => !Object.hasOwn(ABOUT_LOCALES,name)));
+  const ABOUT_LOCALE_MODULE_URL = (() => {
+    const main = new URL(import.meta.url), module = new URL('./locales/about-locales.js',main);
+    module.search = main.search;
+    return module.href;
+  })();
+  let aboutExternalLocales = null, aboutExternalLocalesLoading = null, aboutExternalLocaleAttempt = 0;
+
+  function validateAboutLocales(locales, settings, languages, recorderYaml) {
+    const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (!object(locales) || !Object.hasOwn(locales,'Deutsch') || !Object.hasOwn(locales,'English')) {
+      throw Error('About locales require Deutsch master and English fallback');
+    }
+    const master = locales.Deutsch;
+    if (!object(master?.strings) || !Object.keys(master.strings).length || !object(master?.sourcePurposes) || !object(master?.help)) {
+      throw Error('Invalid German About master');
+    }
+    const sourceKeys = [...recorderYaml.matchAll(/^\s+- "?([^"\s]+)"?$/gm)].map(match => match[1]);
+    const sameKeys = (value, keys) => object(value)
+      && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value,key));
+    if (sourceKeys.length !== 4 || new Set(sourceKeys).size !== 4 || !sameKeys(master.sourcePurposes,sourceKeys)) {
+      throw Error('German About sources must match the four Recorder sources');
+    }
+    const groups = {
+      strings: Object.keys(master.strings),
+      settingLabels: Object.keys(settings),
+      settingPurposes: Object.keys(settings),
+      sourcePurposes: Object.keys(master.sourcePurposes)
+    };
+    const sameShape = (value, reference) => {
+      if (typeof reference === 'string') return typeof value === 'string' && !!value.trim();
+      if (typeof reference === 'boolean') return value === reference;
+      if (Array.isArray(reference)) return Array.isArray(value) && value.length === reference.length && reference.every((item,index) => sameShape(value[index],item));
+      return object(reference) && object(value) && Object.keys(value).length === Object.keys(reference).length && Object.keys(reference).every(key => Object.hasOwn(value,key) && sameShape(value[key],reference[key]));
+    };
+    for (const [name, locale] of Object.entries(locales)) {
+      if (!languages.some(entry => entry.value === name)) throw Error('Unregistered About locale: ' + name);
+      if (!sameKeys(locale,[...Object.keys(groups),'help'])) throw Error('Invalid About bundle: ' + name);
+      for (const [group, keys] of Object.entries(groups)) {
+        if (!sameKeys(locale[group],keys)) throw Error('About keys differ: ' + name + '.' + group);
+        for (const key of keys) {
+          if (typeof locale[group][key] !== 'string' || !locale[group][key].trim()) {
+            throw Error('Empty/non-string About value: ' + name + '.' + group + '.' + key);
+          }
+        }
+      }
+      if (!sameShape(locale.help,master.help)) throw Error('Help keys differ: ' + name);
+      if (locale.help.sections.some((section,index) => section.key !== master.help.sections[index].key)) throw Error('Help section identity differs: ' + name);
+    }
+  }
+
+  function isAboutLocaleComplete(locale) {
+    try {
+      // Reuse the strict schema for this candidate without validating other optional bundles.
+      validateAboutLocales({Deutsch: ABOUT_LOCALES.Deutsch, English: locale},
+        SETTING_ENTITIES, LANGUAGE_DEFINITIONS, ABOUT_RECORDER_YAML);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function installAboutExternalLocales(locales, helpLocales) {
+    if (!locales || !helpLocales || Object.keys(locales).some(name => !Object.hasOwn(helpLocales,name)) || Object.keys(helpLocales).some(name => !Object.hasOwn(locales,name))) {
+      throw Error('External About and Help locale registries differ');
+    }
+    const complete = Object.fromEntries(Object.entries(locales).map(([name,locale]) => [name,{...locale,help:helpLocales[name]}]));
+    const combined = {...ABOUT_LOCALES,...complete};
+    validateAboutLocales(combined,SETTING_ENTITIES,LANGUAGE_DEFINITIONS,ABOUT_RECORDER_YAML);
+    if (Object.keys(locales).length !== ABOUT_EXTERNAL_LANGUAGE_NAMES.size ||
+        [...ABOUT_EXTERNAL_LANGUAGE_NAMES].some(name => !Object.hasOwn(locales,name))) {
+      throw Error('External About locales must cover every non-native registered language');
+    }
+    aboutExternalLocales = complete;
+    return complete;
+  }
+
+  function loadAboutExternalLocales() {
+    if (aboutExternalLocales) return Promise.resolve(aboutExternalLocales);
+    if (aboutExternalLocalesLoading) return aboutExternalLocalesLoading;
+    const url = new URL(ABOUT_LOCALE_MODULE_URL), attempt = aboutExternalLocaleAttempt++;
+    if (attempt) url.hash = 'retry-' + attempt;
+    aboutExternalLocalesLoading = import(url.href)
+      .then(module => installAboutExternalLocales(module.ABOUT_EXTERNAL_LOCALES,module.HELP_EXTERNAL_LOCALES))
+      .catch(() => null)
+      .finally(() => { aboutExternalLocalesLoading = null; });
+    return aboutExternalLocalesLoading;
+  }
+
+  function requestAboutLocale(language, onLoaded) {
+    if (!ABOUT_EXTERNAL_LANGUAGE_NAMES.has(language) || aboutExternalLocales?.[language]) return;
+    loadAboutExternalLocales().then(locales => { if (locales?.[language]) onLoaded(); });
+  }
+
+  function resolveAboutLocale(language) {
+    const candidate = LANGUAGE_DEFINITIONS.some(entry => entry.value === language)
+      ? ABOUT_LOCALES[language] || aboutExternalLocales?.[language] : null;
+    return isAboutLocaleComplete(candidate) ? candidate : ABOUT_LOCALES.English;
+  }
 
   // V3.99711 – sprachabhängige Kurzformen für die KPI-Zeitangabe "Zuletzt".
   const AGE_SHORT_UNITS = {
@@ -5888,6 +6042,8 @@
     }
 
     disconnectedCallback() {
+      this._closeLanguageOnboarding(false);
+      this._closeHelp(false);
       this._closeAbout(false, false);
       if (this._tickInterval) clearInterval(this._tickInterval);
       if (this._clusterRenderDebounceTimer) {
@@ -11727,6 +11883,111 @@
               justify-content:center;
             }
           }
+          /* V4.06 menu polish: premium About icon and three-level diagnostic hierarchy. */
+          #settings-about > span[aria-hidden="true"] {
+            display:grid;
+            place-items:center;
+            flex:0 0 24px;
+            width:24px;
+            height:24px;
+            font:700 21px/1 "Segoe UI Symbol","Arial Unicode MS",sans-serif;
+            color:#e2b95d;
+            background:linear-gradient(135deg,#926521 6%,#f8e4a5 35%,#c18a2c 60%,#f1cf75 82%,#8d5d1a);
+            -webkit-background-clip:text;
+            background-clip:text;
+            -webkit-text-fill-color:transparent;
+            filter:drop-shadow(0 1px 0 rgba(49,29,5,.92)) drop-shadow(0 0 2px rgba(232,181,65,.28));
+            transition:filter .16s ease;
+          }
+          #settings-about:focus-visible { outline:none; }
+          #settings-about:focus-visible > span[aria-hidden="true"] {
+            outline:2px solid rgba(255,225,161,.92);
+            outline-offset:2px;
+            border-radius:50%;
+            filter:brightness(1.13) drop-shadow(0 0 3px rgba(244,197,91,.42));
+          }
+          @media(hover:hover) and (pointer:fine) {
+            #settings-about:hover > span[aria-hidden="true"] {
+              filter:brightness(1.14) saturate(1.08) drop-shadow(0 1px 0 rgba(49,29,5,.92)) drop-shadow(0 0 3px rgba(238,188,72,.38));
+            }
+          }
+          #settings-about:active > span[aria-hidden="true"] {
+            filter:brightness(.9) saturate(1.08) drop-shadow(0 1px 0 rgba(49,29,5,.92));
+          }
+          #settings-diagnostic-section > .settings-section-content > .settings-row-label {
+            box-sizing:border-box;
+            width:100%;
+            padding:9px 12px 4px 22px;
+            color:#d7bd82;
+            font-size:8.6px;
+            font-weight:820;
+            line-height:1.25;
+            letter-spacing:.055em;
+          }
+          #settings-diagnostic-section > .settings-section-content > .settings-row {
+            padding-left:34px;
+            padding-right:12px;
+          }
+          #settings-diagnostic-section > .settings-section-content > .settings-test-grid {
+            padding-left:34px;
+            padding-right:12px;
+          }
+          @media(max-width:720px) {
+            #settings-diagnostic-section > .settings-section-content > .settings-row-label { padding-left:20px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-row { padding-left:30px;padding-right:10px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-test-grid { padding-left:30px;padding-right:10px; }
+          }
+          @media(max-height:720px) {
+            #settings-diagnostic-section > .settings-section-content > .settings-row-label { padding:7px 9px 3px 20px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-row { padding-left:30px;padding-right:9px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-test-grid { padding-left:30px;padding-right:9px; }
+          }
+          @media(max-width:520px) and (min-height:721px) {
+            #settings-diagnostic-section > .settings-section-content > .settings-row-label { padding-left:18px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-row { padding-left:26px; }
+            #settings-diagnostic-section > .settings-section-content > .settings-test-grid { padding-left:26px; }
+          }
+          /* V4.06 final premium settings shell and hierarchy. */
+          .settings-dialog{--premium-gold:#c7a25b;--premium-gold-bright:#f1d58c;--premium-line:rgba(201,160,80,.34);border-color:var(--premium-line);background:radial-gradient(circle at 15% 0%,rgba(230,184,85,.09),transparent 34%),linear-gradient(180deg,rgba(20,28,38,.99),rgba(7,12,18,.995));box-shadow:0 30px 90px rgba(0,0,0,.72),inset 0 0 0 1px rgba(255,235,184,.055),inset 0 1px rgba(255,244,213,.08),0 0 30px rgba(207,159,60,.065)}
+          .settings-premium-links{display:grid;grid-template-columns:1fr 1fr;gap:7px}.settings-premium-link{min-height:44px!important;border:1px solid rgba(190,149,69,.22)!important;border-radius:12px!important;background:linear-gradient(110deg,rgba(176,130,49,.08),rgba(12,22,29,.62))!important;box-shadow:inset 0 1px rgba(255,239,198,.055)}
+          .settings-premium-icon{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;transform:translateY(-1px);font:700 21px/1 "Segoe UI Symbol","Arial Unicode MS",sans-serif;color:#e2b95d;background:linear-gradient(135deg,#926521 6%,#f8e4a5 35%,#c18a2c 60%,#f1cf75 82%,#8d5d1a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 1px 0 rgba(49,29,5,.92)) drop-shadow(0 0 2px rgba(232,181,65,.28));transition:filter .16s ease}
+          .settings-premium-link:focus-visible{outline:2px solid rgba(255,225,161,.92)!important;outline-offset:1px!important}.settings-premium-link:focus-visible .settings-premium-icon{filter:brightness(1.15) drop-shadow(0 0 3px rgba(244,197,91,.42))}
+          .settings-section{border-color:rgba(190,151,76,.22);background:linear-gradient(115deg,rgba(169,126,47,.055),rgba(255,255,255,.018) 30%,rgba(7,13,19,.36));box-shadow:inset 0 1px rgba(255,239,194,.045),0 2px 8px rgba(0,0,0,.18);transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}.settings-section[open]{border-color:rgba(224,180,87,.46);background:linear-gradient(115deg,rgba(177,132,47,.10),rgba(255,255,255,.022) 35%,rgba(7,13,19,.42));box-shadow:inset 0 1px rgba(255,243,207,.08),0 0 13px rgba(208,158,55,.08)}
+          .settings-collapsible>.settings-section-head{align-items:center;min-height:44px}.settings-collapsible>.settings-section-head::after{content:'';width:13px;height:13px;border-right:2px solid #d6b66e;border-bottom:2px solid #d6b66e;font-size:0;transform:rotate(45deg);margin:-6px 10px 0 0;filter:drop-shadow(0 0 2px rgba(226,180,74,.32));transition:transform .16s ease,filter .16s ease}.settings-collapsible[open]>.settings-section-head::after{transform:rotate(225deg);margin-top:7px;color:inherit;filter:brightness(1.18) drop-shadow(0 0 3px rgba(240,193,82,.48))}
+          #settings-diagnostic-section>.settings-section-content>.settings-row-label{border-left:1px solid rgba(196,153,70,.24);background:linear-gradient(90deg,rgba(190,143,52,.045),transparent 72%)}
+          .settings-signature-wrap{background:radial-gradient(ellipse at 82% 52%,rgba(201,151,51,.075),transparent 56%)}.settings-signature{filter:sepia(.16) saturate(1.28) brightness(1.08) contrast(1.035) drop-shadow(0 1px .5px rgba(255,226,158,.16)) drop-shadow(0 3px 5px rgba(0,0,0,.48))}
+          @media(hover:hover) and (pointer:fine){.settings-premium-link:hover .settings-premium-icon{filter:brightness(1.14) saturate(1.08) drop-shadow(0 1px 0 rgba(49,29,5,.92)) drop-shadow(0 0 3px rgba(238,188,72,.38))}.settings-collapsible>.settings-section-head:hover::after{filter:brightness(1.2) drop-shadow(0 0 3px rgba(240,193,82,.48))}}
+          .settings-premium-link:active .settings-premium-icon{filter:brightness(.9) saturate(1.08)}
+          @media(max-width:420px){.settings-premium-links{grid-template-columns:1fr}}
+          /* V4.06 accepted UI polish: premium frame and symmetric action tiles. */
+          /* V4.06 pass2: Welcome-derived 2px metal frame, reduced diffuse gold shadow. */
+          .settings-dialog{
+            border:2px solid transparent;
+            background:radial-gradient(circle at 15% 0%,rgba(230,184,85,.09),transparent 34%) padding-box,linear-gradient(180deg,rgba(20,28,38,.99),rgba(7,12,18,.995)) padding-box,linear-gradient(145deg,#e3c17d,#80602d 16%,#f9e3ad 29%,#735024 45%,#ba9144 57%,#ffe5a0 74%,#614723 86%,#cba35c) border-box;
+            box-shadow:0 30px 90px rgba(0,0,0,.72),inset 0 0 0 1px rgba(255,236,181,.08),inset 0 1px rgba(255,244,213,.10),0 0 8px rgba(215,164,67,.055)
+          }
+          .settings-dialog::after{content:none!important}
+          /* V4.06 pass5: Settings version lives in the persistent dialog shell, not the transient About style. */
+          .settings-footer-version{position:absolute;left:18px;bottom:18px;z-index:3;color:#747d8a;font-size:8.2px;font-weight:720;letter-spacing:.08em;white-space:nowrap;user-select:none}
+          @media(max-width:720px){.settings-footer-version{left:14px;bottom:15px}}
+          .settings-chip.settings-chip-premium{width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;flex:0 0 40px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible}
+          .settings-chip-premium .gear-welcome{display:block!important;width:30px;height:30px;min-width:30px;min-height:30px;overflow:visible;color:#e5bd69;stroke-width:3;filter:drop-shadow(0 1px .5px #4c301c) drop-shadow(0 2px 1.5px #0009) drop-shadow(0 -1px .4px #f5d5a555);transition:filter .16s ease,transform .16s ease}
+          #card-root.ipad-device .settings-chip-premium .gear-welcome{display:block!important}
+          @media(hover:hover) and (pointer:fine){.settings-chip-premium:hover .gear-welcome{filter:brightness(1.08) drop-shadow(0 1px .5px #4c301c) drop-shadow(0 2px 1.5px #0009) drop-shadow(0 0 3px #d9a84f55)}}
+          .settings-chip-premium:active .gear-welcome{transform:scale(.97);filter:brightness(.92) drop-shadow(0 1px .5px #4c301c)}
+          .settings-premium-link{display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important}
+          .settings-premium-link>span:last-child{min-width:0;text-align:left}
+          .settings-close.settings-close-premium{position:relative;display:grid!important;place-items:center;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:transparent!important;font-size:0!important;line-height:0!important;overflow:visible;box-shadow:none!important}
+          .settings-close-premium img{display:block;width:34px;height:34px;object-fit:contain;pointer-events:none;transition:transform .16s ease,filter .16s ease}
+          .settings-close-premium:focus-visible{outline:2px solid #e7c16e!important;outline-offset:-2px!important}.settings-close-premium:active img{transform:scale(.97);filter:brightness(.92)}
+          @media(hover:hover) and (pointer:fine){.settings-close-premium:hover{background:transparent!important}.settings-close-premium:hover img{filter:brightness(1.12) drop-shadow(0 0 2px #dba34c70)}}
+          @media(hover:none) and (pointer:coarse){.settings-close-premium:focus-visible{outline:none!important}}
+          @media(max-width:520px) and (orientation:portrait){
+            .settings-premium-links{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+            .settings-premium-link{min-width:0;padding-left:10px!important;padding-right:9px!important;gap:7px!important}
+            .settings-premium-icon{flex-basis:22px;width:22px;height:22px}
+            .settings-premium-link>span:last-child{white-space:normal;line-height:1.15}
+          }
         </style>
 
         <ha-card id="card-root">
@@ -11783,10 +12044,9 @@
                   </div>
                 </div>
 
-                <button class="top-chip settings-chip" id="settings-open" type="button"
+                <button class="top-chip settings-chip settings-chip-premium" id="settings-open" type="button"
                         title="Gewitterradar-Einstellungen öffnen" aria-label="Einstellungen öffnen">
-                  <span class="gear gear-glyph">⚙</span>
-                  <ha-icon class="gear gear-ipad" icon="mdi:cog-outline" aria-hidden="true"></ha-icon>
+                  <svg class="gear gear-welcome" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><defs><linearGradient id="mainview-settings-metal" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#fff0bc"/><stop offset=".28" stop-color="#e8bd60"/><stop offset=".48" stop-color="#92703a"/><stop offset=".62" stop-color="#ffe2a0"/><stop offset="1" stop-color="#b58b44"/></linearGradient></defs><g stroke="url(#mainview-settings-metal)"><path d="M27 7Q32 5 37 7L38 14L43 17L50 14Q55 18 57 23L52 28V36L57 41Q55 46 50 50L43 47L38 50L37 57Q32 59 27 57L26 50L21 47L14 50Q9 46 7 41L12 36V28L7 23Q9 18 14 14L21 17L26 14Z"/><circle cx="32" cy="32" r="11"/><circle cx="32" cy="32" r="17" opacity=".25"/></g></svg>
                 </button>
                 </div>
               </div>
@@ -12573,14 +12833,13 @@
                 <div class="settings-title" id="settings-dialog-title">Einstellungen</div>
               </div>
               <div class="settings-head-actions">
-                <span class="settings-version" title="Kartenversion">V${CARD_VERSION}</span>
-                <button class="settings-close" id="settings-close" type="button"
-                        aria-label="Einstellungen schließen">×</button>
+                <button class="settings-close settings-close-premium" id="settings-close" type="button"
+                        aria-label="Einstellungen schließen"><img src="${ABOUT_CLOSE_IMAGE}" alt="" width="34" height="34" draggable="false"></button>
               </div>
             </div>
 
             <div class="settings-body">
-              <button class="settings-language-button" id="settings-about" type="button"><span aria-hidden="true">ⓘ</span> <span id="settings-about-label">Über Gewitterradar</span></button>
+              <div class="settings-premium-links"><button class="settings-language-button settings-premium-link" id="settings-about" type="button"><span class="settings-premium-icon" aria-hidden="true">ⓘ</span><span id="settings-about-label">Über Gewitterradar</span></button><button class="settings-language-button settings-premium-link" id="settings-help" type="button"><span class="settings-premium-icon" aria-hidden="true">?</span><span id="settings-help-label">Hilfe &amp; Hinweise</span></button></div>
               <details class="settings-section settings-collapsible">
                 <summary class="settings-section-head">
                   <div>
@@ -12750,7 +13009,7 @@
                 </div>
               </details>
 
-              <details class="settings-section settings-collapsible">
+              <details class="settings-section settings-collapsible" id="settings-diagnostic-section">
                 <summary class="settings-section-head">
                   <div>
                     <div class="settings-section-title" id="settings-diagnostic-section-title">Kalibrierung &amp; Diagnose</div>
@@ -12790,6 +13049,8 @@
                   </div>
                 </div>
               </details>
+
+              <div class="settings-footer-version" title="Kartenversion">${BUILD_YYYY_MM} · V${CARD_VERSION}</div>
 
               <div class="settings-signature-wrap" aria-hidden="true">
                 <svg class="settings-signature" viewBox="0 0 1982 563" focusable="false" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
@@ -12953,58 +13214,73 @@
                 <div class="release-history-title" id="release-history-title">Release history</div>
               </div>
               <div class="release-history-head-actions">
-                <span class="release-history-current">V${CARD_VERSION}</span>
+                <span class="release-history-current">${BUILD_YYYY_MM} · V${CARD_VERSION}</span>
                 <button class="release-history-close" id="release-history-close" type="button" aria-label="Close release history">×</button>
               </div>
             </div>
             <div class="release-history-body">
               <article class="release-history-entry">
-                <div class="release-history-version">V4.04</div>
+                <div class="release-history-version">V4.07 · PLANNED</div>
+                <h3>Worldwide location search</h3>
+                <p>Planned for the next development cycle: worldwide place search so a selected location can be used as the Gewitterradar reference point. Scope and implementation remain subject to the V4.07 design and validation phase.</p>
+              </article>
+              <article class="release-history-entry">
+                <div class="release-history-version">V4.06 · 2026/09</div>
+                <h3>Unified product, help & premium refinement</h3>
+                <p>Unified the native integration and Dashboard delivery around one deterministic frontend, expanded About and Help to 15 languages plus 4 German dialect variants, added Recorder multi-device wildcard guidance and strengthened cross-device premium polish with real Android, iPad and iPad Pro acceptance.</p>
+              </article>
+              <article class="release-history-entry">
+                <div class="release-history-version">V4.05 · 2026/09</div>
+                <h3>Premium About Gewitterradar experience</h3>
+                <p>Introduced the premium About Gewitterradar first-start onboarding and information experience, including the personal “Für Alkje” dedication and a Settings entry to reopen it, while preserving the proven lightning, radius, Recent/history and Home Assistant package behavior from V4.04.</p>
+              </article>
+              <article class="release-history-entry">
+                <div class="release-history-version">V4.04 · 2026/09</div>
                 <h3>HACS package staging</h3>
                 <p>HACS now places the required Home Assistant helper package next to the installed card as app_gewitterradar_pkg.yaml. Users still copy or move that file manually to /config/packages/ because a HACS Dashboard repository cannot write outside its own www/community directory. Application logic and helper behavior remain unchanged.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V4.03</div>
+                <div class="release-history-version">V4.03 · 2026/09</div>
                 <h3>HACS release asset priority fix</h3>
                 <p>Removed custom GitHub release assets from the HACS release so HACS falls through to the tagged dist tree and installs the card together with the complete assets directory. Application logic and helper behavior remain unchanged.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V4.02</div>
+                <div class="release-history-version">V4.02 · 2026/09</div>
                 <h3>HACS packaging fix</h3>
                 <p>Corrected the HACS distribution so the card and all four external PNG assets are installed together. Card behavior, helper IDs, layouts and lightning-processing logic remain unchanged.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V4.01</div>
+                <div class="release-history-version">V4.01 · 2026/09</div>
                 <h3>Asset optimization</h3>
                 <p>Conservatively right-sized and losslessly encoded the four external PNG assets for their actual interface render limits, retained generous HiDPI reserves, reduced the combined asset payload by about 61%, and refreshed asset cache keys without changing app behavior.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V4.00</div>
+                <div class="release-history-version">V4.00 · 2026/09</div>
                 <h3>First stable release</h3>
-                <p>First stable Gewitterradar release, consolidating live lightning visualization, three-zone storm assessment, responsive cross-device operation, 19 language variants, metric and imperial units, compass navigation, and 120-minute activity history into a hardened Home Assistant card.</p>
+                <p>First stable Gewitterradar release, consolidating live lightning visualization, three-zone storm assessment, responsive cross-device operation, 15 languages plus 4 German dialect variants, metric and imperial units, compass navigation, and 120-minute activity history into a hardened Home Assistant card.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V3.997</div>
+                <div class="release-history-version">V3.997 · 2026/08</div>
                 <h3>Interface & usability refinement</h3>
                 <p>Improved mobile layouts, responsive settings, radius controls, metric and imperial distance support, near-strike distance formatting, and direct radius editing from the map.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V3.996</div>
+                <div class="release-history-version">V3.996 · 2026/08</div>
                 <h3>Release hardening</h3>
                 <p>Removed obsolete diagnostic code while preserving iPad/WebKit safeguards, stable recent-activity updates, custom dropdown controls, and other regression-critical compatibility paths.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V3.994</div>
+                <div class="release-history-version">V3.994 · 2026/08</div>
                 <h3>Stability, navigation & internationalization</h3>
-                <p>Stabilized cluster identity and browsing during live updates and zooming, refined individual-strike focus and compass behavior, added live data-source status, and expanded the interface to 19 language variants.</p>
+                <p>Stabilized cluster identity and browsing during live updates and zooming, refined individual-strike focus and compass behavior, added live data-source status, and expanded the interface toward the multilingual release line.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V3.993</div>
+                <div class="release-history-version">V3.993 · 2026/08</div>
                 <h3>Pre-release feature consolidation</h3>
                 <p>Consolidated the three-radius model, aura and warning controls, 120-minute activity history, compass modes, reference-location selection, filtering, clustering, and responsive device layouts.</p>
               </article>
               <article class="release-history-entry">
-                <div class="release-history-version">V3.98</div>
+                <div class="release-history-version">V3.98 · 2026/08</div>
                 <h3>Core interface evolution</h3>
                 <p>Established the mature Gewitterradar interface with live strike visualization, radius-based classification, recent activity, KPI panels, filters, clustering, and mobile/tablet adaptations.</p>
               </article>
@@ -13339,7 +13615,8 @@
     }
 
     _bindControls() {
-      this.shadow.getElementById('settings-about')?.addEventListener('click', () => this._openAbout());
+      this.shadow.getElementById('settings-about')?.addEventListener('click', () => this._openAbout(true));
+      this.shadow.getElementById('settings-help')?.addEventListener('click', () => this._openHelp());
       const obsSlider = this.shadow.getElementById('observation-slider');
       const stormSlider = this.shadow.getElementById('storm-slider');
       const dangerSlider = this.shadow.getElementById('danger-slider');
@@ -13916,6 +14193,7 @@
 
       // V3.519 – Einstellungs-Popup öffnen/schließen.
       const openSettings = () => {
+        this._syncHelpMenu();
         settingsBackdrop?.classList.add('open');
         settingsClose?.focus?.({ preventScroll:true });
       };
@@ -14595,8 +14873,9 @@
       const fallback = I18N[LANGUAGE_DEFAULT]?.strings || {};
       const table = I18N[language]?.strings || fallback;
       const aboutKey = key.startsWith('about.') ? key.slice(6) : null;
-      let text = (aboutKey ? ABOUT_STRINGS[language]?.[aboutKey] ?? ABOUT_STRINGS[LANGUAGE_DEFAULT]?.[aboutKey] : undefined)
-        ?? table[key] ?? fallback[key] ?? I18N['Deutsch']?.strings?.[key] ?? key;
+      let text = aboutKey
+        ? resolveAboutLocale(language).strings[aboutKey] ?? key
+        : table[key] ?? fallback[key] ?? I18N['Deutsch']?.strings?.[key] ?? key;
       return String(text).replace(/\{([a-zA-Z0-9_]+)\}/g,(_,name) =>
         Object.prototype.hasOwnProperty.call(vars,name) ? String(vars[name]) : `{${name}}`
       );
@@ -14637,7 +14916,7 @@
       this._i18nAttrKeys = this._i18nAttrKeys || new WeakMap();
 
       const dynamicRoots = new Set([
-        'header-status','radar-subtitle-location','radar-subtitle-window','warn-text','animation-state',
+        'about-shell','header-status','radar-subtitle-location','radar-subtitle-window','warn-text','animation-state',
         'settings-location-coordinates','location-main-current','location-main-button','settings-location-button','mode-main',
         'map-legend','recent-content','recent-filter-stack','kpi-cardinal','kpi-time','hit-live','footer-update','device-main',
         'compass-caption','history-sub','trend-value','trend-sub','radius-keypad-title','radius-keypad-limit'
@@ -14704,19 +14983,204 @@
       return nativeUsable ? mapping.native : mapping.legacy;
     }
 
+    _languageOnboardingComplete() {
+      return this._hass?.states?.[this._languageInitializationEntity()]?.state === 'on';
+    }
+
+    _languageInitializationEntity() {
+      const mapping = LANGUAGE_INITIALIZATION_ENTITIES;
+      if (this._config.language_initialized_entity) return this._config.language_initialized_entity;
+      const nativeState = this._hass?.states?.[mapping.native];
+      const nativeUsable = nativeState && !['unknown','unavailable'].includes(nativeState.state);
+      return nativeUsable ? mapping.native : mapping.legacy;
+    }
+
+    _initialLanguageChoice() {
+      const raw = this._hass?.locale?.language || this._hass?.language || '';
+      const base = String(raw).trim().toLowerCase().replace(/_/g,'-').split('-')[0];
+      const code = base === 'no' ? 'nb' : base;
+      return LANGUAGE_DEFINITIONS.find(entry => entry.group === 'main' && entry.code === code)?.value || LANGUAGE_DEFAULT;
+    }
+
+    _openLanguageOnboarding() {
+      if (this._languageOnboardingDialog || languageOnboardingOwner?.isConnected || !this.shadow) return;
+      languageOnboardingOwner = this;
+      const shell = document.createElement('div');
+      shell.id = 'language-onboarding-shell';
+      shell.innerHTML = '<style>' +
+        '.language-onboarding{box-sizing:border-box;width:min(540px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:0;border:1px solid #c9a86a;border-radius:14px;color:#e7e3db;background:radial-gradient(ellipse at 100% 0,#263d4d66,transparent 60%),linear-gradient(145deg,#111e27,#081117);box-shadow:0 24px 70px #0009,inset 0 0 0 3px #b18b3520;font:14px/1.45 Segoe UI,Arial,sans-serif;overflow:hidden;color-scheme:dark}' +
+        '.language-onboarding::backdrop{background:#03070bdd}.language-onboarding *{box-sizing:border-box}.language-onboarding form{display:flex;flex-direction:column;max-height:calc(100dvh - 26px);margin:0}.language-onboarding header{display:flex;align-items:center;gap:16px;padding:22px 22px 12px;flex:none}.language-onboarding header img{width:62px;height:62px;object-fit:contain}.language-onboarding h2{font-size:22px;line-height:1.2;color:#f5dfac;margin:0 0 4px}.language-onboarding header p{margin:0;color:#c5b58f}.language-onboarding .language-intro{width:100%;margin:0;padding:0 22px 16px;color:#c4cbd0;font-size:clamp(14px,calc(10px + 1.1vw),15px);line-height:1.5;flex:none}.language-onboarding .language-intro span{display:block}.language-onboarding .language-intro span+span{margin-top:6px}.language-onboarding .language-options{padding:0 22px 6px;overflow:auto;min-height:0;overscroll-behavior:contain;scrollbar-color:#a4864c #0a141c;touch-action:pan-y}.language-onboarding fieldset{border:0;padding:0;margin:0 0 14px;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.language-onboarding legend{padding:0 0 8px;color:#ddc28c;font-size:clamp(14px,calc(10px + 1.1vw),15px);line-height:1.35;font-weight:650}.language-onboarding label{display:flex;align-items:center;gap:10px;min-height:44px;padding:9px 12px;border:1px solid #a488453b;border-radius:7px;background:#101e28;cursor:pointer}.language-onboarding label:has(:checked){border-color:#e4c17b;background:linear-gradient(115deg,#6a51254a,#172630);color:#ffe4ad}.language-onboarding input{accent-color:#e7c274;margin:0;flex:none}.language-onboarding :focus-visible{outline:2px solid #ffe1a1;outline-offset:3px}.language-onboarding label:has(:focus-visible){outline:2px solid #ffe1a1;outline-offset:1px}.language-onboarding footer{padding:12px 22px 18px;border-top:1px solid #b99a483b;flex:none;background:#08131b}.language-onboarding button{min-height:44px;width:100%;border:1px solid #f3d18b;border-radius:7px;background:linear-gradient(#f3d28e,#bc9346);color:#211b10;font:600 14px Segoe UI,Arial,sans-serif;cursor:pointer;touch-action:manipulation}.language-onboarding button:disabled{opacity:.65;cursor:wait}.language-onboarding .language-error{margin:0 0 8px;color:#ffceaa;font-size:12px}.language-onboarding .language-error:empty{display:none}@media(hover:hover){.language-onboarding label:hover{background:#233442}.language-onboarding button:hover{filter:brightness(1.06)}}@media(max-width:380px){.language-onboarding fieldset{grid-template-columns:1fr}.language-onboarding header{padding:16px 16px 10px;gap:10px}.language-onboarding h2{font-size:19px}.language-onboarding .language-options{padding-left:16px;padding-right:16px}.language-onboarding .language-intro{padding-left:16px;padding-right:16px}}' +
+        '</style><dialog class="language-onboarding" aria-modal="true" aria-labelledby="language-onboarding-title" aria-describedby="language-onboarding-intro"><form><header><img src="' + ABOUT_LOGO + '" alt="Gewitterradar" width="62" height="62"><div><h2 id="language-onboarding-title">Choose your language</h2><p lang="de">Sprache wählen</p></div></header><p id="language-onboarding-intro" class="language-intro"><span lang="en">Choose the language for Gewitterradar. You can change it again at any time in Settings.</span><span lang="de">Wähle die Sprache für Gewitterradar. Du kannst sie jederzeit in den Einstellungen ändern.</span></p><div class="language-options"></div><footer><p class="language-error" role="alert"></p><button type="submit">Weiter / Continue</button></footer></form></dialog>';
+      const dialog = shell.querySelector('dialog'),choice = this._initialLanguageChoice();
+      for (const [group,title] of [['main','Sprachen / Languages'],['fun','Deutsche Dialekte / German dialects']]) {
+        const fieldset = document.createElement('fieldset'),legend = document.createElement('legend');
+        legend.textContent = title;fieldset.append(legend);
+        for (const entry of LANGUAGE_DEFINITIONS.filter(item => item.group === group)) {
+          const label = document.createElement('label'),input = document.createElement('input'),text = document.createElement('span');
+          input.type = 'radio';input.name = 'language';input.value = entry.value;input.checked = entry.value === choice;
+          text.textContent = entry.value;label.append(input,text);fieldset.append(label);
+        }
+        shell.querySelector('.language-options').append(fieldset);
+      }
+      this._languageOnboardingReturnFocus = this.shadow.activeElement;
+      this.shadow.append(shell);this._languageOnboardingDialog = dialog;
+      dialog.addEventListener('cancel',event => { event.preventDefault();event.stopPropagation(); });
+      dialog.addEventListener('keydown',event => {
+        if (event.key === 'Escape') { event.preventDefault();event.stopPropagation(); }
+        if (event.key !== 'Tab') return;
+        const first = dialog.querySelector('input:checked'),last = dialog.querySelector('button');
+        const active = this.shadow.activeElement;
+        if (event.shiftKey && active === first) { event.preventDefault();last.focus(); }
+        else if (!event.shiftKey && active === last) { event.preventDefault();first.focus(); }
+      });
+      dialog.querySelector('form').addEventListener('submit',event => {event.preventDefault();this._confirmLanguageOnboarding();});
+      dialog.showModal();dialog.querySelector('input:checked').focus();
+    }
+
+    async _confirmLanguageOnboarding() {
+      const dialog = this._languageOnboardingDialog;
+      if (!dialog || this._languageOnboardingSubmitting) return;
+      const value = dialog.querySelector('input:checked')?.value;
+      if (!LANGUAGE_DEFINITIONS.some(entry => entry.value === value)) return;
+      const button = dialog.querySelector('button'),error = dialog.querySelector('.language-error');
+      this._languageOnboardingSubmitting = true;button.disabled = true;error.textContent = '';
+      try {
+        if (this._languageOnboardingComplete()) { this._closeLanguageOnboarding(true); return; }
+        const marker = this._languageInitializationEntity(),markerState = this._hass?.states?.[marker]?.state;
+        if (!['on','off'].includes(markerState) || !['switch','input_boolean'].includes(marker?.split('.')[0])) throw Error('Global language marker unavailable');
+        const entity = this._languageEntity(),state = this._hass?.states?.[entity];
+        if (!state || ['unknown','unavailable'].includes(state.state)) throw Error('Language setting unavailable');
+        const written = await this._selectSetting(entity,value);
+        if (written === false) throw Error('Language setting cannot be written');
+        if (this._languageOnboardingDialog !== dialog || !this.isConnected) return;
+        // Reuse the regular selector's transient preview until HA confirms its state.
+        this._languagePreview = value;
+        await this._hass.callService(marker.split('.')[0],'turn_on',{entity_id:marker});
+        // Advance only after the global HA state is visible, never from a local marker.
+        const deadline = Date.now() + 10000;
+        while (!this._languageOnboardingComplete()) {
+          if (this._languageOnboardingDialog !== dialog || !this.isConnected) return;
+          if (Date.now() >= deadline) throw Error('Global language marker not confirmed');
+          await new Promise(resolve => setTimeout(resolve,50));
+        }
+        this._closeLanguageOnboarding(true);
+        this._render();this._maybeOpenAbout();
+      } catch (_) {
+        if (this._languageOnboardingDialog === dialog) {
+          error.textContent = 'Sprache konnte nicht gespeichert werden. Bitte erneut versuchen. / Could not save the language. Please try again.';
+          button.disabled = false;button.focus();
+        }
+      } finally { this._languageOnboardingSubmitting = false; if (this._languageOnboardingComplete()) this._maybeOpenAbout(); }
+    }
+
+    _closeLanguageOnboarding(restoreFocus = false) {
+      const dialog = this._languageOnboardingDialog,previous = this._languageOnboardingReturnFocus;
+      this._languageOnboardingDialog = null;this._languageOnboardingReturnFocus = null;
+      if (dialog) { dialog.close();dialog.parentElement?.remove(); }
+      if (languageOnboardingOwner === this) languageOnboardingOwner = null;
+      if (restoreFocus && previous?.isConnected) previous.focus({preventScroll:true});
+    }
+
     _maybeOpenAbout() {
-      if (!this.isConnected || !this._built || !this._hass || aboutClaimedVersion >= ABOUT_ONBOARDING_VERSION) return;
+      if (!this.isConnected || !this._built || !this._hass) return;
       // Editor previews must never consume the browser's first regular start.
       for (let node = this; node; node = node.parentElement || node.getRootNode?.().host) {
         if (/^(hui-card-preview|hui-dialog-edit-card|hui-card-element-editor)$/.test(node.localName || '')) return;
       }
+      if (!this._languageOnboardingComplete()) { this._openLanguageOnboarding(); return; }
+      if (languageOnboardingOwner?._languageOnboardingSubmitting) return;
+      this._closeLanguageOnboarding(true);
+      if (aboutClaimedVersion >= ABOUT_ONBOARDING_VERSION) return;
       let seen = 0;
       try { seen = Number(localStorage.getItem(ABOUT_STORAGE_KEY)) || 0; } catch (_) {}
       if (seen >= ABOUT_ONBOARDING_VERSION) return;
       this._openAbout();
     }
 
-    _openAbout() {
+    _syncHelpMenu(loadExternal = true) {
+      if (!this.shadow) return;
+      const language = this._languageValue(), locale = resolveAboutLocale(language);
+      const label = this.shadow.getElementById('settings-help-label');
+      if (label) label.textContent = locale.help.menuTitle;
+      if (loadExternal) requestAboutLocale(language, () => {
+        if (this._languageValue() !== language) return;
+        this._syncHelpMenu(false);
+        if (this._helpDialog?.open) this._syncHelp();
+      });
+    }
+
+    _openHelp() {
+      if (this._helpDialog?.open || !this.isConnected || !this.shadow) return;
+      const shell = document.createElement('div');
+      shell.id = 'help-shell';
+      shell.innerHTML = '<style>' +
+        '.help-dialog{--help-gold:#dfbc72;--help-bright:#f7dfa1;box-sizing:border-box;width:min(760px,calc(100vw - 16px));max-width:calc(100vw - 16px);height:min(900px,calc(100dvh - 16px));max-height:calc(100dvh - 16px);padding:0;border:1px solid #c9a050;border-radius:13px;color:#d5dae0;background:radial-gradient(ellipse at 15% 0,#31445145,transparent 48%),#091219;box-shadow:0 24px 90px #000c,inset 0 0 0 3px #cda9500c;font:14px/1.48 Segoe UI,Arial,sans-serif;overflow:hidden;color-scheme:dark}' +
+        '.help-dialog[open]{display:flex;flex-direction:column}.help-dialog::backdrop{background:#03070be0}.help-dialog *{box-sizing:border-box}.help-head{position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) 44px;align-items:center;gap:14px;padding:16px 12px 14px 18px;border-bottom:1px solid #a9874755;background:linear-gradient(180deg,#162630,#0b151c)}' +
+        '.help-emblem{display:grid;place-items:center;width:44px;height:44px;border:1px solid #bc974f88;border-radius:50%;color:#f4d58e;background:radial-gradient(circle at 35% 28%,#f8e3a847,#8d652a42 45%,#09131a 72%);box-shadow:inset 0 1px #fff4,0 0 12px #d69a2130;font:700 23px/1 Georgia,serif}.help-head h2{margin:0;color:#f6e9cc;font-size:25px;line-height:1.15}.help-head p{margin:4px 0 0;color:#bfc7cf;font-size:13px}.help-close{width:44px;height:44px;border:0;background:transparent;color:#efd391;font-size:27px;border-radius:7px}.help-close:focus-visible,.help-copy:focus-visible,.help-dialog summary:focus-visible{outline:2px solid #ffe1a1;outline-offset:-2px}' +
+        '.help-content{min-height:0;overflow:auto;padding:10px;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:#9a7f4755 transparent}.help-section{margin:0 0 8px;border:1px solid #8d713d70;border-radius:9px;background:linear-gradient(110deg,#a4843818,#0b171e70 30%,#15202645);box-shadow:inset 0 1px #ffe6ad0b;overflow:hidden}.help-section[open]{border-color:#c69d4f9c;box-shadow:inset 0 1px #fff2,0 0 11px #d69a2116}.help-dialog summary{display:grid;grid-template-columns:34px minmax(0,1fr) 20px;align-items:center;gap:11px;min-height:52px;padding:8px 13px;list-style:none;cursor:pointer;color:var(--help-bright);font-weight:700}.help-dialog summary::-webkit-details-marker{display:none}.help-section-icon{display:grid;place-items:center;width:31px;height:31px;border:1px solid #b68e486e;border-radius:50%;color:#e9c87e;background:linear-gradient(145deg,#8d672936,#071017);box-shadow:inset 0 1px #fff2;font-size:17px}.help-chevron{width:14px;height:14px;border-right:2px solid #dfbd72;border-bottom:2px solid #dfbd72;transform:rotate(45deg);transition:transform .16s ease,filter .16s ease;margin:-6px 3px 0 0;filter:drop-shadow(0 0 2px #d5a74955)}.help-section[open] .help-chevron{transform:rotate(225deg);margin-top:6px;filter:brightness(1.2) drop-shadow(0 0 3px #edc66d75)}' +
+        '.help-section-body{padding:0 15px 15px 58px;border-top:1px solid #a9874728}.help-section-body p{margin:12px 0 0}.help-section-body ul{margin:10px 0 0;padding-left:19px}.help-section-body li{margin:6px 0}.help-note{padding:9px 11px;border-left:2px solid #c69d50;background:#050d127a;color:#d9caa9}.help-entries{margin:8px 0 0}.help-entries dt{margin-top:9px;color:#efd18c;font-weight:700}.help-entries dd{margin:2px 0 0;color:#cbd1d7}.help-code-wrap{position:relative;margin-top:12px;border:1px solid #8b723e55;border-radius:7px;background:#061017;overflow:hidden}.help-code-wrap pre{margin:0;padding:12px 62px 12px 13px;white-space:pre-wrap;overflow-wrap:anywhere;color:#cbd5df;font:12px/1.45 Consolas,"Liberation Mono",monospace}.help-copy{position:absolute;right:5px;top:4px;width:44px;height:44px;border:0;background:transparent;color:#efd391;font-size:22px}.help-copy-status{position:absolute;right:9px;bottom:3px;color:#f7dfa1;font-size:10px;background:#061017e8}' +
+        '@media(hover:hover) and (pointer:fine){.help-dialog summary:hover{background:#e1b85f0b}.help-close:hover,.help-copy:hover{color:#ffe4a3;filter:drop-shadow(0 0 3px #e0ad4c88)}}@media(max-width:520px){.help-dialog{font-size:13px}.help-head{grid-template-columns:42px minmax(0,1fr) 44px;gap:9px;padding-left:12px}.help-emblem{width:38px;height:38px}.help-head h2{font-size:21px}.help-head p{font-size:12px}.help-content{padding:7px}.help-section-body{padding:0 12px 13px}.help-dialog summary{grid-template-columns:31px minmax(0,1fr) 18px;padding:7px 10px}.help-code-wrap pre{font-size:10.5px;padding-left:9px}}' +
+        /* V4.06 accepted UI polish: stable Help frame and shared premium controls. */
+        '.help-dialog{position:relative;border-color:rgba(238,194,99,.94);box-shadow:0 24px 90px #000c,inset 0 0 0 1px rgba(255,235,184,.09),inset 0 1px rgba(255,247,224,.13),0 0 28px rgba(215,164,67,.14)}.help-dialog::after{content:"";position:absolute;inset:1px;border:1px solid rgba(255,222,148,.38);border-radius:11.75px;box-shadow:inset 0 0 0 1px rgba(120,76,12,.10),0 0 9px rgba(229,178,78,.08);pointer-events:none;z-index:40}.help-close{position:relative;display:grid;place-items:center;color:transparent;font-size:0;line-height:0;background:transparent}.help-close img{display:block;width:34px;height:34px;object-fit:contain;pointer-events:none;transition:transform .16s ease,filter .16s ease}.help-copy{display:grid;place-items:center;color:transparent;font-size:0;line-height:0}.help-copy img{display:block;width:34px;height:34px;object-fit:contain;pointer-events:none;transition:transform .16s ease,filter .16s ease}.help-section-icon{display:grid!important;place-items:center!important;line-height:0!important;text-align:center}.help-section-icon svg{display:block;width:24px;height:24px;overflow:visible;filter:drop-shadow(0 0 2px rgba(226,180,74,.22))}.help-section-icon[data-help-icon="prerequisites"] svg{width:27px;height:27px}.help-section-icon[data-help-icon="functions"] svg{width:25px;height:25px}.help-close:active img,.help-copy:active img{transform:scale(.97);filter:brightness(.92)}@media(hover:hover) and (pointer:fine){.help-dialog{border-color:rgba(244,201,108,.99);box-shadow:0 24px 90px #000c,inset 0 0 0 1px rgba(255,235,184,.10),inset 0 1px rgba(255,247,224,.14),0 0 0 1px rgba(246,203,110,.42),0 0 30px rgba(215,164,67,.16)}.help-dialog::after{border-color:rgba(255,228,158,.50);box-shadow:inset 0 0 0 1px rgba(120,76,12,.10),0 0 10px rgba(229,178,78,.11)}.help-close:hover,.help-copy:hover{filter:none;background:transparent}.help-close:hover img,.help-copy:hover img{filter:brightness(1.12) drop-shadow(0 0 2px #dba34c70)}}@media(hover:none) and (pointer:coarse){.help-close:focus-visible{outline:none}}.help-dialog{border:2px solid transparent;background:radial-gradient(ellipse at 15% 0,#31445145,transparent 48%) padding-box,linear-gradient(#091219,#091219) padding-box,linear-gradient(145deg,#e3c17d,#80602d 16%,#f9e3ad 29%,#735024 45%,#ba9144 57%,#ffe5a0 74%,#614723 86%,#cba35c) border-box;box-shadow:0 24px 90px #000c,inset 0 0 0 1px rgba(255,235,184,.07),inset 0 1px rgba(255,247,224,.10),0 0 8px rgba(215,164,67,.05)}.help-dialog::after{content:none!important}.help-section-icon[data-help-icon="functions"] svg{width:27px;height:27px;filter:drop-shadow(0 1px .5px #4c301c) drop-shadow(0 -1px .4px #f5d5a555)}' +
+        '</style><dialog class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title"><header class="help-head"><span class="help-emblem" aria-hidden="true">?</span><div><h2 id="help-title"></h2><p class="help-subtitle"></p></div><button class="help-close" type="button" aria-label="Close"><img src="' + ABOUT_CLOSE_IMAGE + '" alt="" width="34" height="34" draggable="false"></button></header><div class="help-content"></div></dialog>';
+      this._helpReturnFocus = this.shadow.activeElement;
+      this.shadow.append(shell);
+      const dialog = shell.querySelector('dialog');
+      this._helpDialog = dialog;
+      dialog.querySelector('.help-close').addEventListener('click',() => this._closeHelp());
+      dialog.addEventListener('cancel',event => { event.preventDefault();event.stopPropagation();this._closeHelp(); });
+      dialog.addEventListener('keydown',event => {
+        if (event.key === 'Escape') { event.preventDefault();event.stopPropagation();this._closeHelp();return; }
+        if (event.key !== 'Tab') return;
+        const stops=[...dialog.querySelectorAll('button,summary')].filter(node=>node.getClientRects().length),first=stops[0],last=stops[stops.length-1],active=this.shadow.activeElement;
+        if(event.shiftKey&&active===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&active===last){event.preventDefault();first.focus();}
+        event.stopPropagation();
+      });
+      this._syncHelp();
+      dialog.showModal();
+      dialog.querySelector('.help-close').focus({preventScroll:true});
+    }
+
+    _syncHelp() {
+      const dialog=this._helpDialog;
+      if(!dialog)return;
+      const language=this._languageValue(),locale=resolveAboutLocale(language),help=locale.help;
+      dialog.querySelector('h2').textContent=help.title;
+      dialog.querySelector('.help-subtitle').textContent=help.subtitle;
+      dialog.querySelector('.help-close').setAttribute('aria-label',help.close);
+      if(this._helpLocale!==help){
+        const content=dialog.querySelector('.help-content'),openKeys=new Set([...content.querySelectorAll('details[open]')].map(node=>node.dataset.helpSection)),scrollTop=content.scrollTop;
+        content.textContent='';
+        const icons={prerequisites:'⌂',radii:'◎',location:'⌖',functions:'⚙',defaults:'✓',troubleshooting:'!',recorder:'▤'};
+        /* Deterministic Help icons remove platform font-baseline drift on iPad/iPad Pro. */
+        const premiumFunctionsIcon='<svg class="help-functions-welcome-gear" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><defs><linearGradient id="help-functions-welcome-metal" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#fff0bc"/><stop offset=".28" stop-color="#e8bd60"/><stop offset=".48" stop-color="#92703a"/><stop offset=".62" stop-color="#ffe2a0"/><stop offset="1" stop-color="#b58b44"/></linearGradient></defs><g stroke="url(#help-functions-welcome-metal)"><path d="M27 7Q32 5 37 7L38 14L43 17L50 14Q55 18 57 23L52 28V36L57 41Q55 46 50 50L43 47L38 50L37 57Q32 59 27 57L26 50L21 47L14 50Q9 46 7 41L12 36V28L7 23Q9 18 14 14L21 17L26 14Z"/><circle cx="32" cy="32" r="11"/><circle cx="32" cy="32" r="17" opacity=".25"/></g></svg>';
+        const deterministicHelpIcons={prerequisites:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 10.5 12 3.5l8.5 7v9h-6v-5h-5v5h-6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',radii:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4.7" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1.25" fill="currentColor"/></svg>',location:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 2.8v4M12 17.2v4M2.8 12h4M17.2 12h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',functions:premiumFunctionsIcon,defaults:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4.8 12.5 4.2 4.2 10.2-10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',troubleshooting:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.3v10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="18.4" r="1.35" fill="currentColor"/></svg>',recorder:'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="3.8" width="14" height="16.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h8M8 12h8M8 16h8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'};
+        help.sections.forEach((section,index)=>{
+          const details=document.createElement('details');details.className='help-section';details.dataset.helpSection=section.key;details.open=openKeys.has(section.key)||(!this._helpLocale&&index===0);
+          const summary=document.createElement('summary'),icon=document.createElement('span'),title=document.createElement('span'),chevron=document.createElement('span');
+          icon.className='help-section-icon';icon.dataset.helpIcon=section.key;icon.setAttribute('aria-hidden','true');icon.innerHTML=deterministicHelpIcons[section.key]||icons[section.key]||'•';title.textContent=section.title;chevron.className='help-chevron';chevron.setAttribute('aria-hidden','true');summary.append(icon,title,chevron);details.append(summary);
+          const body=document.createElement('div');body.className='help-section-body';
+          for(const text of section.paragraphs||[]){const p=document.createElement('p');p.textContent=text;body.append(p);}
+          if(section.items?.length){const ul=document.createElement('ul');for(const text of section.items){const li=document.createElement('li');li.textContent=text;ul.append(li);}body.append(ul);}
+          if(section.entries?.length){const dl=document.createElement('dl');dl.className='help-entries';for(const [term,text] of section.entries){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=term+':';dd.textContent=text;dl.append(dt,dd);}body.append(dl);}
+          if(section.recorder){const wrap=document.createElement('div');wrap.className='help-code-wrap';const pre=document.createElement('pre'),code=document.createElement('code'),button=document.createElement('button'),status=document.createElement('span');code.textContent=ABOUT_RECORDER_YAML;pre.append(code);button.className='help-copy';button.type='button';button.setAttribute('aria-label',help.copy);const copyImage=document.createElement('img');copyImage.src=ABOUT_COPY_IMAGE;copyImage.alt='';copyImage.width=34;copyImage.height=34;copyImage.draggable=false;button.append(copyImage);status.className='help-copy-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');wrap.append(pre,button,status);body.append(wrap);button.addEventListener('click',()=>this._copyHelpRecorder());}
+          for(const text of section.notes||[]){const p=document.createElement('p');p.className='help-note';p.textContent=text;body.append(p);}
+          details.append(body);content.append(details);
+        });
+        content.scrollTop=scrollTop;this._helpLocale=help;
+      }
+      requestAboutLocale(language,()=>{if(this._helpDialog===dialog&&this._languageValue()===language)this._syncHelp();});
+    }
+
+    _closeHelp(restoreFocus = true) {
+      if(!this._helpDialog)return;
+      this._helpDialog.close();this._helpDialog.parentElement.remove();this._helpDialog=null;this._helpLocale=null;
+      const focus=this._helpReturnFocus||this.shadow?.getElementById('settings-help');this._helpReturnFocus=null;
+      if(restoreFocus&&focus?.isConnected)focus.focus({preventScroll:true});
+    }
+
+    _openAbout(fromSettings = false) {
+      if (!this._languageOnboardingComplete()) { this._maybeOpenAbout(); return; }
       if (this._aboutDialog?.open || !this.isConnected || !this.shadow) return;
       const shell = document.createElement('div');
       shell.id = 'about-shell';
@@ -14834,11 +15298,88 @@
         .about-forest{background-position:20% 70%;filter:brightness(1.08);mask-image:linear-gradient(90deg,#000 0%,#000 56%,transparent)}
         @media(max-width:620px){.about-claim{font-size:10px}.about-content>.about-dedication{background-position:center,center,60% 25%}.about-forest{filter:brightness(1.08)}}
         @media(min-width:621px) and (max-height:500px){.about-claim{font-size:11px}}
+        /* Approved post-V4.05 controls: visual shell only; handlers/hit targets unchanged. */
+        .about-close span{position:relative;border:0;background:none;overflow:visible}
+        .about-close span img{position:absolute;left:50%;top:50%;width:34px;height:34px;max-width:none;object-fit:contain;transform:translate(-50%,-50%);filter:none;pointer-events:none}
+        .about-dialog .about-code-meta .about-copy{appearance:none;border:0;background:none;box-shadow:none;outline:none;-webkit-tap-highlight-color:transparent}
+        .about-code-wrap code{font-family:inherit}
+        @media(max-width:620px){.about-dedication-copy p{max-width:60%}}
+        .about-code-meta .about-copy::before{content:none}
+        .about-copy>img{position:relative;display:block;width:28px;height:28px;object-fit:contain;pointer-events:none;filter:none}
+        .about-close:focus-visible{outline:2px solid #ffe1a1;outline-offset:-2px;border-radius:5px}
+        .about-copy:focus-visible>img{filter:brightness(1.15) drop-shadow(1px 0 0 #ffe1a1) drop-shadow(-1px 0 0 #ffe1a1) drop-shadow(0 1px 0 #ffe1a1) drop-shadow(0 -1px 0 #ffe1a1)}
+        @media(hover:hover) and (pointer:fine){.about-close:hover img,.about-copy:hover:not(:focus-visible) img{filter:brightness(1.12) drop-shadow(0 0 2px #dba34c70)}}
+        .about-close:active img{transform:translate(-50%,calc(-50% + .5px)) scale(.97);filter:brightness(.92)}.about-copy:active:not(:focus-visible) img{transform:translateY(.5px) scale(.97);filter:brightness(.92)}
+        /* V4.06 localized-header and section-header alignment. */
+        @media(min-width:621px){.about-head{display:grid;grid-template-columns:86px minmax(0,1fr) 170px;align-items:center;column-gap:24px}.about-head-copy{align-self:center;padding-top:0;min-width:0;max-width:none}.about-dialog h2{white-space:normal;text-wrap:balance}.about-claim{position:static;align-self:center;justify-self:end;width:140px;margin-right:32px}.about-head>img{align-self:center}@container(min-width:780px){.about-head{grid-template-columns:94px minmax(0,1fr) 185px}.about-claim{right:auto;margin-right:32px}}}
+        .about-section-head{min-height:30px;align-items:center;gap:11px}.about-section-head .about-icon{width:30px;height:30px}.about-section-head h3{display:flex;align-items:center;min-height:30px}.about-welcome>.about-icon,.about-network>.about-icon{width:30px;height:30px;margin-top:0}.about-welcome h3,.about-network h3{display:flex;align-items:center;min-height:30px;margin-bottom:2px}.about-recorder .about-section-head{position:static;padding-left:0;height:auto;min-height:30px}.about-recorder .about-section-head .about-icon{position:static;left:auto;top:auto;height:30px}.about-dialog summary{gap:11px}.about-dialog summary:after{width:14px;height:14px;margin:-7px 13px 0 auto;border-width:2px;filter:drop-shadow(0 0 2px #d6aa4f55);transition:transform .16s ease,filter .16s ease}.about-dialog details[open] summary:after{margin-top:7px;filter:brightness(1.18) drop-shadow(0 0 3px #e6b95777)}
+        /* V4.06 accepted UI polish: About chevron spacing, iPad focus rendering, mobile dedication. */
+        .about-dialog summary:after{margin-right:22px}
+        .about-mobile-break{display:none}
+        @media(max-width:620px) and (orientation:portrait){
+          .about-dialog summary:after{margin-right:18px}
+          .about-dedication-copy{transform:translateY(7px)}
+          .about-dedication-copy p{max-width:none}
+          .about-mobile-break{display:block;height:0}
+        }
+        @media(hover:none) and (pointer:coarse) and (min-width:700px) and (max-width:1100px){
+          .about-close{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}
+          .about-close:focus-visible{outline:none!important}
+          .about-close:focus-visible img{filter:brightness(1.04) drop-shadow(0 0 3px rgba(224,173,76,.42))}
+        }
+        /* V4.06 pass3: suppress WebKit's reopen focus frame without changing the premium X asset. */
+        .about-dialog.about-touch-tablet .about-close{-webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent}
+        .about-dialog.about-touch-tablet .about-close:focus,.about-dialog.about-touch-tablet .about-close:focus-visible{outline:none!important;box-shadow:none!important}
+        /* V4.06 pass4: keep programmatic dialog focus invisible on touch tablets; center Welcome footer visuals. */
+        .about-dialog.about-touch-tablet:focus,.about-dialog.about-touch-tablet:focus-visible{outline:none!important}
+        .about-footer-left{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:12px;min-width:0}
+        .about-footer-left .about-dev{grid-row:auto!important}
+        .about-footer-signature-wrap{min-height:0!important;padding:0!important;min-width:0;overflow:visible}
+        .about-footer-signature{width:170px!important;max-width:100%!important;height:auto!important}
+        @media(min-width:621px){
+          .about-footer button:before{inset:5px 0!important}
+          .about-footer button>span,.about-footer button>.about-icon{transform:none!important}
+        }
+        @media(max-width:620px){
+          .about-footer-left{grid-column:1;grid-row:2;gap:4px}
+          .about-footer-signature{width:105px!important;max-width:100%!important}
+        }
+        /* V4.06 pass5: final footer/version placement and 25% larger centered radius badges. */
+        .about-footer-left{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:0}
+        .about-footer-left .about-dev{grid-row:auto!important;text-align:center;white-space:nowrap;font-size:7.6px;line-height:1.2}
+        .about-footer-signature{width:196px!important;max-width:100%!important;height:auto!important}
+        .about-radius strong,.about-radius p{padding-right:74px}
+        .about-radius output{position:absolute;right:0;top:50%;transform:translateY(-50%);min-width:58px;padding:2.5px 5px;font-size:1.25em;line-height:1.1;border-radius:5px;box-sizing:border-box}
+        @media(min-width:621px){
+          .about-footer{position:relative}
+          .about-footer-left{position:relative;display:block!important;align-self:stretch!important;min-height:54px}
+          .about-footer-signature-wrap{position:absolute;left:50%;top:50%;width:196px!important;max-width:none!important;transform:translate(-50%,-50%);margin:0!important}
+          .about-footer-left .about-dev{position:absolute;left:6px;bottom:4px;text-align:left;white-space:nowrap}
+        }
+        @media(max-width:620px){
+          .about-footer-left{grid-column:1;grid-row:2;gap:4px}
+          .about-footer-left .about-dev{font-size:6.8px}
+          .about-footer-signature{width:165px!important;max-width:100%!important}
+        }
+        @supports (-webkit-touch-callout:none){
+          @media(hover:none) and (pointer:coarse) and (min-width:700px) and (min-height:700px){
+            .about-footer-left .about-dev{transform:translateY(14px)}
+          }
+        }
+        /* V4.06 pass5: Greek mobile portrait needs real text flow instead of an absolute claim overlay. */
+        @media(max-width:620px) and (orientation:portrait){
+          .about-dialog[data-about-language="Ελληνικά"] .about-head{display:grid;grid-template-columns:70px minmax(0,1fr);grid-template-rows:auto auto;align-items:start;column-gap:12px;row-gap:6px;height:auto;min-height:158px}
+          .about-dialog[data-about-language="Ελληνικά"] .about-head>img{grid-column:1;grid-row:1;align-self:start}
+          .about-dialog[data-about-language="Ελληνικά"] .about-head-copy{grid-column:2;grid-row:1;align-self:start;max-width:none}
+          .about-dialog[data-about-language="Ελληνικά"] .about-head-copy p{max-width:none}
+          .about-dialog[data-about-language="Ελληνικά"] .about-claim{position:static;grid-column:2;grid-row:2;justify-self:stretch;align-self:start;width:auto;max-width:none;margin:0;padding:2px 4px;font-size:9px;line-height:1.35;text-align:center}
+        }
+
       </style>
       <dialog class="about-dialog" role="dialog" aria-modal="true" aria-labelledby="about-title">
-        <header class="about-head"><img src="${ABOUT_LOGO}" alt="Gewitterradar" width="86" height="86"><div class="about-head-copy"><h2 id="about-title" data-about-text="title"></h2><p data-about-text="subtitle"></p></div><div class="about-claim" data-about-text="claim"></div><button class="about-close" type="button" data-about-close aria-label="Close"><span aria-hidden="true">×</span></button></header>
+        <header class="about-head"><img src="${ABOUT_LOGO}" alt="Gewitterradar" width="86" height="86"><div class="about-head-copy"><h2 id="about-title" data-about-text="title"></h2><p data-about-text="subtitle"></p></div><div class="about-claim" data-about-text="claim"></div><button class="about-close" type="button" data-about-close aria-label="Close"><span aria-hidden="true"><img src="${ABOUT_CLOSE_IMAGE}" alt="" width="34" height="34" draggable="false"></span></button></header>
         <div class="about-content">
-          <section class="about-dedication"><div class="about-forest" aria-hidden="true"></div>${icon('heart','about-heart')}<div class="about-dedication-copy"><h3>Für Alkje</h3><p></p></div><div class="about-signature" aria-hidden="true"><svg class="about-handwriting" viewBox="0 0 170 62" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" transform="skewX(-12)"><path d="M16 49C22 36 24 18 27 13M8 26C21 7 56 9 55 27C54 43 31 53 15 48M48 45C58 28 70 29 65 41C60 53 47 52 51 41C56 31 68 30 67 34L63 47C62 51 68 47 75 40M72 49L80 31L74 45C89 28 94 28 88 42C83 54 92 48 99 41M96 49C103 31 112 6 114 9C121 19 103 35 102 36L113 32C104 37 103 41 111 45C116 51 122 42 124 40M120 41C139 39 144 26 132 31C122 34 113 54 132 48L145 40M148 47C152 46 151 52 146 55"/><path d="M23 20C23 29 20 40 16 48M64 35L60 45M78 35L73 47M105 22L97 47M131 33C126 37 122 42 124 46" stroke-width="2.15" opacity=".45"/><path d="M9 57C43 49 85 61 137 50" opacity=".55" stroke-width=".65"/></g></svg>${icon('heartSmall','about-small-heart')}<small>dass du immer an mich glaubst.</small></div></section>
+          <section class="about-dedication"><div class="about-forest" aria-hidden="true"></div>${icon('heart','about-heart')}<div class="about-dedication-copy"><h3 data-about-text="dedicationTitle"></h3><p data-about-text="dedicationText"></p></div><div class="about-signature" aria-hidden="true"><svg class="about-handwriting" viewBox="0 0 170 62" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" transform="skewX(-12)"><path d="M16 49C22 36 24 18 27 13M8 26C21 7 56 9 55 27C54 43 31 53 15 48M48 45C58 28 70 29 65 41C60 53 47 52 51 41C56 31 68 30 67 34L63 47C62 51 68 47 75 40M72 49L80 31L74 45C89 28 94 28 88 42C83 54 92 48 99 41M96 49C103 31 112 6 114 9C121 19 103 35 102 36L113 32C104 37 103 41 111 45C116 51 122 42 124 40M120 41C139 39 144 26 132 31C122 34 113 54 132 48L145 40M148 47C152 46 151 52 146 55"/><path d="M23 20C23 29 20 40 16 48M64 35L60 45M78 35L73 47M105 22L97 47M131 33C126 37 122 42 124 46" stroke-width="2.15" opacity=".45"/><path d="M9 57C43 49 85 61 137 50" opacity=".55" stroke-width=".65"/></g></svg>${icon('heartSmall','about-small-heart')}<small>dass du immer an mich glaubst.</small></div></section>
           <section class="about-welcome">${icon('people')}<div><h3 data-about-text="welcome"></h3><p data-about-text="intro"></p></div><aside class="about-quote" data-about-text="quote"></aside></section>
           <section class="about-radii"><div class="about-section-head">${icon('radar')}<h3 data-about-text="radii"></h3><small data-about-text="radiiTagline"></small></div><div class="about-radii-layout">
             <div class="about-radar-wrap"><svg class="about-radar" viewBox="0 0 120 120" role="img"><title data-about-text="schematic"></title><defs><radialGradient id="about-radar-observation"><stop stop-color="#d9b45e" stop-opacity=".05"/><stop offset=".62" stop-color="#d9b45e" stop-opacity=".03"/><stop offset="1" stop-color="#d9b45e" stop-opacity=".2"/></radialGradient><radialGradient id="about-radar-storm"><stop stop-color="#79b8e7" stop-opacity=".04"/><stop offset="1" stop-color="#79b8e7" stop-opacity=".13"/></radialGradient></defs><circle cx="60" cy="60" r="57" fill="url(#about-radar-observation)" stroke="#d9b45e" stroke-width=".75"/><circle cx="60" cy="60" r="36" fill="url(#about-radar-storm)" stroke="#79b8e7" stroke-width=".75"/><circle cx="60" cy="60" r="19" fill="#cf403912" stroke="#c4483b" stroke-width=".75"/><path d="M60 1V119M1 60H119" stroke="#dce0d4" stroke-opacity=".35" stroke-width=".65"/><circle cx="60" cy="60" r="3" fill="#fff5e5"/></svg></div>
@@ -14846,14 +15387,13 @@
             <aside class="about-radius-info">${icon('info')}<p data-about-text="radiusInfo"></p></aside>
           </div></section>
           <section class="about-network">${icon('globe')}<div><h3 data-about-text="thanks"></h3><p data-about-text="network"></p></div><aside class="about-network-plaque" aria-hidden="true">${icon('globe')}<b>Blitzortung.org</b><small>COMMUNITY · LIGHTNING DATA</small></aside></section>
-          <section class="about-recorder"><div class="about-section-head">${icon('database')}<h3 data-about-text="recorder"></h3></div><p class="about-recorder-intro" data-about-text="recorderText"></p><div class="about-recorder-layout"><div class="about-code-wrap"><div class="about-line-numbers" aria-hidden="true"></div><div class="about-code-meta"><span>YAML</span><button class="about-copy" type="button" aria-label="Copy YAML">${icon('copy')}</button></div><pre tabindex="0"><code></code></pre><span class="about-copy-status" role="status" aria-live="polite"></span></div><aside class="about-recorder-benefit">${icon('warning')}<p data-about-text="recorderBenefit"></p>${icon('database','about-benefit-database')}</aside></div></section>
+          <section class="about-recorder"><div class="about-section-head">${icon('database')}<h3 data-about-text="recorder"></h3></div><p class="about-recorder-intro" data-about-text="recorderText"></p><div class="about-recorder-layout"><div class="about-code-wrap"><div class="about-line-numbers" aria-hidden="true"></div><div class="about-code-meta"><span>YAML</span><button class="about-copy" type="button" aria-label="Copy YAML"><img src="${ABOUT_COPY_IMAGE}" alt="" width="28" height="28" draggable="false"></button></div><pre tabindex="0"><code></code></pre><span class="about-copy-status" role="status" aria-live="polite"></span></div><aside class="about-recorder-benefit">${icon('warning')}<p data-about-text="recorderBenefit"></p>${icon('database','about-benefit-database')}</aside></div></section>
           <details class="about-entities"><summary>${icon('cube')}<span><strong data-about-text="entities"></strong><small data-about-text="entitiesSubtitle"></small></span></summary><div class="about-entity-groups"><h3 data-about-text="native"></h3><div class="about-settings-list"></div><h3 data-about-text="legacy"></h3><p data-about-text="legacyText"></p><h3 data-about-text="sources"></h3><ul class="about-source-list"></ul><h3 data-about-text="locations"></h3><p data-about-text="dynamic"></p><ul class="about-location-list"><li><code>person.*</code><p class="about-purpose" data-about-text="locationPerson"></p></li><li><code>zone.*</code><p class="about-purpose" data-about-text="locationZone"></p></li></ul></div></details>
         </div>
-        <footer class="about-footer"><span class="about-dev">V4.05 DEV · Visual V2<br>Gewitterradar · Home Assistant</span><button class="about-understood" type="button">${icon('check')}<span data-about-text="understood"></span></button><button class="about-later" type="button">${icon('clock')}<span data-about-text="later"></span></button><div class="about-footer-reminder">${icon('settings')}<p data-about-text="footer"></p></div></footer>
+        <footer class="about-footer"><div class="about-footer-left"><div class="settings-signature-wrap about-footer-signature-wrap" aria-hidden="true"><svg class="settings-signature about-footer-signature" viewBox="0 0 1982 563" focusable="false" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><image id="about-footer-signature-image" x="0" y="0" width="1982" height="563" preserveAspectRatio="xMidYMid meet"></image></svg></div><span class="about-dev">${BUILD_YYYY_MM} · V${CARD_VERSION} · Gewitterradar · by CK</span></div><button class="about-understood" type="button">${icon('check')}<span data-about-text="understood"></span></button><button class="about-later" type="button">${icon('clock')}<span data-about-text="later"></span></button><div class="about-footer-reminder">${icon('settings')}<p data-about-text="footer"></p></div></footer>
       </dialog>`;
 
       const dialog = shell.querySelector('dialog');
-      shell.querySelector('.about-dedication p').textContent = ABOUT_DEDICATION;
       const code = shell.querySelector('pre code');
       ABOUT_RECORDER_YAML.split('\n').forEach((line, index, lines) => {
         const span = document.createElement('span');
@@ -14874,11 +15414,16 @@
       for (const match of ABOUT_RECORDER_YAML.matchAll(/^\s+- "?([^"\n]+)"?$/gm)) {
         const row = document.createElement('li');
         row.innerHTML = '<code></code><p class="about-purpose"></p>';
+        row.dataset.source = match[1];
         row.querySelector('code').textContent = match[1];
         shell.querySelector('.about-source-list').append(row);
       }
       this._aboutReturnFocus = this.shadow.activeElement;
       this.shadow.append(shell);
+      const aboutFooterSignatureImage = shell.querySelector('#about-footer-signature-image');
+      _uiAsset7VerifiedUri().then((uri) => {
+        if (uri && aboutFooterSignatureImage?.isConnected) aboutFooterSignatureImage.setAttribute('href', uri);
+      });
       this._aboutDialog = dialog;
       dialog.querySelector('[data-about-close]').addEventListener('click', () => this._closeAbout());
       dialog.querySelector('.about-understood').addEventListener('click', () => this._closeAbout(true));
@@ -14901,33 +15446,75 @@
       this._syncAbout();
       dialog.showModal();
       aboutClaimedVersion = ABOUT_ONBOARDING_VERSION;
-      dialog.querySelector('[data-about-close]').focus({preventScroll:true});
+      const aboutClose = dialog.querySelector('[data-about-close]');
+      const touchTablet = fromSettings && navigator.maxTouchPoints > 0 && Math.min(window.innerWidth, window.innerHeight) >= 700;
+      dialog.classList.toggle('about-touch-tablet', touchTablet);
+      if (touchTablet) {
+        dialog.tabIndex = -1;
+        dialog.focus({preventScroll:true});
+      } else {
+        aboutClose.focus({preventScroll:true});
+      }
     }
 
     _syncAbout() {
       const dialog = this._aboutDialog;
       if (!dialog) return;
-      const t = (key) => this._t(`about.${key}`);
+      const language = this._languageValue();
+      dialog.dataset.aboutLanguage = language;
+      const locale = resolveAboutLocale(language);
+      const status = dialog.querySelector('.about-copy-status');
+      if (this._aboutStatusLanguage !== language || this._aboutStatusLocale !== locale) status.textContent = '';
+      this._aboutStatusLanguage = language; this._aboutStatusLocale = locale;
+      const t = (key) => locale.strings[key];
+      const mobileDedicationParts = [
+        'Danke, dass du mir die Zeit',
+        ' lässt, meinen Interessen und',
+        ' meiner Begeisterung für Technik,',
+        ' Wetter und all den Ideen dazwischen',
+        ' nachzugehen – und mich Projekten',
+        ' wie Gewitterradar mit so viel Freude',
+        ' und Ausdauer zu widmen.'
+      ];
+      const mobileDedicationText = mobileDedicationParts.join('');
       for (const node of dialog.querySelectorAll('[data-about-text]')) {
         const text = t(node.dataset.aboutText);
+        const isGermanDedication = node.dataset.aboutText === 'dedicationText' && language === 'Deutsch' && text === mobileDedicationText;
+        if (isGermanDedication) {
+          if (node.dataset.mobilePortraitLayout !== text) {
+            node.replaceChildren();
+            mobileDedicationParts.forEach((part, index) => {
+              if (index) {
+                const lineBreak = document.createElement('span');
+                lineBreak.className = 'about-mobile-break';
+                lineBreak.setAttribute('aria-hidden', 'true');
+                node.append(lineBreak);
+              }
+              node.append(document.createTextNode(part));
+            });
+            node.dataset.mobilePortraitLayout = text;
+          }
+          continue;
+        }
+        if (node.dataset.mobilePortraitLayout) delete node.dataset.mobilePortraitLayout;
         if (node.textContent !== text) node.textContent = text;
       }
       dialog.querySelector('[data-about-close]').setAttribute('aria-label', t('close'));
       dialog.querySelector('.about-copy').setAttribute('aria-label', t('copy'));
-      const labels = ABOUT_SETTING_LABELS[this._languageValue()] || ABOUT_SETTING_LABELS[LANGUAGE_DEFAULT];
-      const purposes = ABOUT_SETTING_PURPOSES[this._languageValue()] || ABOUT_SETTING_PURPOSES[LANGUAGE_DEFAULT];
-      const sourcePurposes = ABOUT_SOURCE_PURPOSES[this._languageValue()] || ABOUT_SOURCE_PURPOSES[LANGUAGE_DEFAULT];
-      const keys = Object.keys(SETTING_ENTITIES);
+      const {settingLabels: labels, settingPurposes: purposes, sourcePurposes} = locale;
       const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
-      dialog.querySelectorAll('.about-source-list .about-purpose').forEach((node, index) => setText(node, sourcePurposes[index]));
+      dialog.querySelectorAll('.about-source-list [data-source]').forEach((row) => setText(row.querySelector('.about-purpose'), sourcePurposes[row.dataset.source]));
+      requestAboutLocale(language, () => {
+        if (this._aboutDialog === dialog && this._languageValue() === language) this._syncAbout();
+      });
       for (const row of dialog.querySelectorAll('[data-setting]')) {
         const key = row.dataset.setting, mapping = SETTING_ENTITIES[key];
         const resolved = this[ABOUT_SETTING_ACCESSORS[key]]();
         const state = this._hass?.states?.[resolved]?.state;
         const available = state != null && !['unknown','unavailable',''].includes(state);
-        const source = resolved === mapping.native ? 'Native' : resolved === mapping.legacy ? t('legacy') : t('override');
-        setText(row.querySelector('strong'), labels[keys.indexOf(key)]);
-        setText(row.querySelector('.about-purpose'), purposes[keys.indexOf(key)]);
+        const source = resolved === mapping.native ? t('sourceNative') : resolved === mapping.legacy ? t('legacy') : t('override');
+        setText(row.querySelector('strong'), labels[key]);
+        setText(row.querySelector('.about-purpose'), purposes[key]);
         setText(row.querySelector('.about-native-id'), mapping.native);
         setText(row.querySelector('.about-legacy-id'), `${t('legacy')}: ${mapping.legacy} · ${t('legacyPurpose')}`);
         setText(row.querySelector('.about-entity-status'), `${t('resolved')}: ${resolved} · ${source} · ${t(available ? 'available' : 'unavailable')}`);
@@ -14936,7 +15523,7 @@
         const key = row.dataset.radius;
         const state = this._hass?.states?.[this[ABOUT_SETTING_ACCESSORS[key]]()]?.state;
         const value = state == null || String(state).trim() === '' ? null : finiteNumber(state);
-        setText(row.querySelector('strong span'), labels[keys.indexOf(key)]);
+        setText(row.querySelector('strong span'), labels[key]);
         setText(row.querySelector('output'), value == null ? '—' : this._formatRadiusDistance(value).text);
       }
     }
@@ -14957,29 +15544,34 @@
       if (restoreFocus && focus?.isConnected) focus.focus({preventScroll:true});
     }
 
-    async _copyAboutRecorder() {
-      const dialog = this._aboutDialog;
+    async _copyRecorderYaml(dialog, buttonSelector, statusSelector, strings) {
       if (!dialog?.open) return;
-      const button = dialog.querySelector('.about-copy');
+      const button = dialog.querySelector(buttonSelector);
       let copied = false;
       try {
         await navigator.clipboard.writeText(ABOUT_RECORDER_YAML);
         copied = true;
       } catch (_) {
-        // Local HTTP / embedded browsers: keep the fallback inside the modal's
-        // focus boundary, remove it immediately and never enable diagnostic tools.
-        if (this._aboutDialog !== dialog || !dialog.open) return;
+        if (!dialog.open) return;
         const area = document.createElement('textarea');
         area.value = ABOUT_RECORDER_YAML;
         area.readOnly = true;
         area.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;';
         dialog.append(area);
         try { area.select(); copied = document.execCommand('copy'); } catch (_) {}
-        finally { area.remove(); button.focus({preventScroll:true}); }
+        finally { area.remove(); button?.focus({preventScroll:true}); }
       }
-      if (this._aboutDialog === dialog && dialog.open) {
-        dialog.querySelector('.about-copy-status').textContent = this._t(copied ? 'about.copied' : 'about.copyFailed');
-      }
+      if (dialog.open) dialog.querySelector(statusSelector).textContent = strings[copied ? 'copied' : 'copyFailed'];
+    }
+
+    _copyAboutRecorder() {
+      const locale = resolveAboutLocale(this._languageValue());
+      return this._copyRecorderYaml(this._aboutDialog,'.about-copy','.about-copy-status',locale.strings);
+    }
+
+    _copyHelpRecorder() {
+      const locale = resolveAboutLocale(this._languageValue());
+      return this._copyRecorderYaml(this._helpDialog,'.help-copy','.help-copy-status',locale.help);
     }
 
     _settingEntityDomain(entityId) {
@@ -18550,6 +19142,7 @@
       if (!this._built || !this._hass) return;
       const aboutLabel = this.shadow.getElementById('settings-about-label');
       if (aboutLabel) aboutLabel.textContent = this._t('about.title');
+      if (this.shadow.getElementById('settings-backdrop')?.classList.contains('open')) this._syncHelpMenu();
       this._maybeOpenAbout();
       if (this._aboutDialog?.open) this._syncAbout();
       if(this._diagnostics.enabled){if(!Number.isFinite(this._diagnosticTimings.firstRenderStartAt)){this._diagnosticTimings.firstRenderStartAt=performance.now();requestAnimationFrame(()=>{if(this._diagnostics.enabled&&!Number.isFinite(this._diagnosticTimings.firstRenderCompleteAt))this._diagnosticTimings.firstRenderCompleteAt=performance.now();});}this._diagnostics.renderCount+=1;}
