@@ -1,5 +1,16 @@
 # Changelog
 
+## V4.07.56 · 2026/09 — prepared derived Dashboard candidate
+
+- Derived the Dashboard payload from canonical Gewitterradar commit `3c7817162f9619837f3be8d2048a79cdb04ca8bb`.
+- Frontend SHA256: `249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a`.
+- External locale SHA256: `997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436`.
+- V4.07 package SHA256: `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`.
+- Includes worldwide place/postcode search and direct coordinates, the accepted 19-language Help/locale scope, V4.07.54 locked normal UI/function behavior and the protected V4.07.56 diagnostic toolset.
+- Preserves the historical V4.06 package for rollback/migration while using `app_gewitterradar_v4_07_pkg.yaml` for V4.07.
+- Adds exact candidate validation for JavaScript, locale module, package checksum inventory and HACS Dashboard packaging.
+- Public V4.06 remains the current release until V4.07.56 is explicitly published; earlier tags and frozen branches remain immutable.
+
 ## V4.06 · 2026/09 — unified product release
 
 - Derived byte-for-byte final Dashboard frontend from the canonical `TheDaimos/gewitterradar` V4.06 release.
@@ -8,10 +19,9 @@
 - Added lazy `locales/about-locales.js`, premium close/copy assets and versioned `app_gewitterradar_v4_06_pkg.yaml`.
 - Preserved all existing V4.05 and earlier public tags/frozen branches unchanged.
 
-
 > **Current repository note (2026-09-06):** The Dashboard repository was renamed from `TheDaimos/gewitterradar` to `TheDaimos/gewitterradar-dashboard`, while the old repository name was reused for the new native Home Assistant Integration. Current HACS Dashboard installations therefore use `/config/www/community/gewitterradar-dashboard/` and `/hacsfiles/gewitterradar-dashboard/`. Existing pre-rename HACS Dashboard entries must not be updated or redownloaded under the stale old repository name; follow [`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md) for the safe migration order. The frozen V4.04 application artifacts themselves remain unchanged.
 
-> **Distribution status:** V4.00, V4.01 and V4.02 are no longer published as installable HACS releases. V4.03 is the first working HACS distribution. V4.04 remains the frozen regression baseline; V4.05 is the current recommended release.
+> **Distribution status:** V4.00, V4.01 and V4.02 are no longer published as installable HACS releases. V4.03 is the first working HACS distribution. V4.04 remains the frozen regression baseline; V4.05 and V4.06 remain preserved release points.
 
 ## V4.05 — About onboarding and visual refinement
 
