@@ -64,7 +64,10 @@ jobs:
           set -euo pipefail
           sha="$GITHUB_SHA"
           frozen_ref="refs/heads/frozen/v4.07.57"
-          existing="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.07.57" --jq '.object.sha' 2>/dev/null || true)"
+          existing=''
+          if value="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.07.57" --jq '.object.sha' 2>/dev/null)"; then
+            existing="$value"
+          fi
           if [[ -n "$existing" && "$existing" != "$sha" ]]; then
             echo "Frozen branch already points to $existing, expected $sha" >&2
             exit 1
@@ -117,6 +120,7 @@ jobs:
         run: |
           set -euo pipefail
           sha="$GITHUB_SHA"
+          git fetch origin "refs/tags/${VERSION}:refs/tags/${VERSION}"
           tag_sha="$(git rev-list -n1 "$VERSION")"
           test "$tag_sha" = "$sha"
           release_target="$(gh api "/repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" --jq '.target_commitish')"
