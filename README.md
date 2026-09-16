@@ -10,8 +10,8 @@
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Dashboard-41BDF5?logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Dashboard-41BDF5)
-![Version](https://img.shields.io/badge/Gewitterradar-V4.07.56-c9a45b)
-![Stable](https://img.shields.io/badge/Public%20Stable-V4.06-lightgrey)
+![Version](https://img.shields.io/badge/Gewitterradar-V4.07.57-c9a45b)
+![Stable](https://img.shields.io/badge/Public%20Stable-V4.07.57-lightgrey)
 
 </div>
 
@@ -533,7 +533,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 </tr>
 <tr>
 <td><strong>Release Notes</strong></td>
-<td><a href="RELEASE_NOTES_V4_07_56.md">RELEASE_NOTES_V4_07_56.md</a></td>
+<td><a href="RELEASE_NOTES_V4_07_57.md">RELEASE_NOTES_V4_07_57.md</a></td>
 </tr>
 </table>
 
@@ -544,8 +544,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 
 <br>
 
-Stabile öffentliche Basis: **V4.06**  
-Aktuell vorbereiteter Dashboard-Kandidat: **V4.07.56**
+Aktueller öffentlicher Dashboard-Stand: **V4.07.57**
 
 Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonischen Gewitterradar-Projekts:
 
@@ -553,11 +552,13 @@ Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonisch
 TheDaimos/gewitterradar
 ```
 
-Akzeptierte V4.07.56-Payload-Identitäten:
+Kanonischer V4.07.57-Commit: `3f3f3c1a574db529d3ac623681fdec4298b26605`
+
+V4.07.57-Payload-Identitäten:
 
 ```text
 dist/gewitterradar.js
-SHA256: 249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a
+SHA256: ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571
 
 dist/locales/about-locales.js
 SHA256: 997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436
@@ -566,7 +567,7 @@ dist/app_gewitterradar_v4_07_pkg.yaml
 SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
 ```
 
-Veröffentlichte Tags und eingefrorene Release-Branches bleiben unverändert. V4.05 und V4.06 werden durch die V4.07.56-Vorbereitung nicht rückwirkend verändert.
+V4.07.57 ist aus dem exakt veröffentlichten kanonischen Gewitterradar-Commit abgeleitet. Frühere Tags und eingefrorene Release-Branches bleiben unverändert.
 
 </details>
 

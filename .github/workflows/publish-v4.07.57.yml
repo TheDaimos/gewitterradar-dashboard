@@ -1,0 +1,125 @@
+name: Publish Dashboard V4.07.57
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/archive-triggers/V4_07_57_PUBLISH.trigger'
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  VERSION: v4.07.57
+  FRONTEND_SHA256: ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571
+  FRONTEND_SIZE: '1955144'
+  CANONICAL_SHA: 3f3f3c1a574db529d3ac623681fdec4298b26605
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact Dashboard V4.07.57 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(stat -c%s dist/gewitterradar.js)" = "$FRONTEND_SIZE"
+          echo "$FRONTEND_SHA256  dist/gewitterradar.js" | sha256sum -c -
+          echo "997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436  dist/locales/about-locales.js" | sha256sum -c -
+          echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
+          grep -Fq "const CARD_VERSION = '4.07.57';" dist/gewitterradar.js
+          grep -Fq 'V4.07-RELEASE57-2026-09-16' dist/gewitterradar.js
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Wait for post-merge Dashboard validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          for attempt in $(seq 1 60); do
+            data="$(gh api -H 'Accept: application/vnd.github+json' "/repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${sha}&per_page=100")"
+            state="$(python -c 'import json,sys; d=json.load(sys.stdin); r=[x for x in d["workflow_runs"] if x["name"]=="Validate HACS Dashboard V4.07.57"]; print("missing" if not r else r[0]["status"]+":"+str(r[0].get("conclusion")))' <<<"$data")"
+            echo "Dashboard validation: $state"
+            if [[ "$state" == "completed:success" ]]; then exit 0; fi
+            if [[ "$state" == completed:* && "$state" != "completed:success" ]]; then exit 1; fi
+            sleep 10
+          done
+          echo 'Timed out waiting for Dashboard validation.' >&2
+          exit 1
+
+      - name: Freeze exact Dashboard release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          frozen_ref="refs/heads/frozen/v4.07.57"
+          existing="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.07.57" --jq '.object.sha' 2>/dev/null || true)"
+          if [[ -n "$existing" && "$existing" != "$sha" ]]; then
+            echo "Frozen branch already points to $existing, expected $sha" >&2
+            exit 1
+          fi
+          if [[ -z "$existing" ]]; then
+            gh api --method POST "/repos/${GITHUB_REPOSITORY}/git/refs" -f ref="$frozen_ref" -f sha="$sha"
+          fi
+
+      - name: Publish GitHub and HACS Dashboard release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$VERSION already exists; verifying target only."
+          else
+            cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          # Gewitterradar Dashboard V4.07.57 · 2026/09
+
+          V4.07.57 veröffentlicht die überarbeitete, deutlich leichter auffindbare Installationsdokumentation der Dashboard-/Package-Variante und synchronisiert die Dashboard-Auslieferung mit dem kanonischen Gewitterradar V4.07.57.
+
+          ## Installation
+
+          - HACS-Repository: `TheDaimos/gewitterradar-dashboard` als **Dashboard**.
+          - JavaScript-Modul: `/hacsfiles/gewitterradar-dashboard/gewitterradar.js`.
+          - V4.07-Package weiterhin manuell nach `/config/packages/app_gewitterradar_v4_07_pkg.yaml` kopieren.
+          - Vollständige View-, Blitzortung-/Tracker- und Recorder-Hinweise stehen direkt in der README und den Installationsanleitungen.
+
+          ## Release-Identität
+
+          - Gewitterradar: **V4.07.57**
+          - Frontend: **1.955.144 Bytes**
+          - SHA256: `ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571`
+          - Kanonischer Produktcommit: `3f3f3c1a574db529d3ac623681fdec4298b26605`
+          - V4.07-Package SHA256: `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`
+
+          Die Produktlogik wurde für diesen Dokumentations-/Installations-Patch nicht verändert. Die Laufzeitbasis bleibt der geschützte V4.07.56-Stand; V4.07.57 ändert ausschließlich die freigegebenen Versions-/Build-Metadaten und die Dokumentation.
+
+          Es werden keine benutzerdefinierten Release-Artefakte veröffentlicht. HACS installiert den vollständigen getaggten `dist/`-Stand.
+          EOF
+            gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --target "$sha" --title 'Gewitterradar Dashboard V4.07.57' --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          fi
+
+      - name: Verify published Dashboard release target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          tag_sha="$(git rev-list -n1 "$VERSION")"
+          test "$tag_sha" = "$sha"
+          release_target="$(gh api "/repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" --jq '.target_commitish')"
+          test "$release_target" = "$sha"
+          frozen_sha="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.07.57" --jq '.object.sha')"
+          test "$frozen_sha" = "$sha"

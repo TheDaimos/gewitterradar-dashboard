@@ -1,4 +1,4 @@
-# Gewitterradar V4.07.56 – Installation (DE)
+# Gewitterradar V4.07.57 – Installation (DE)
 
 Diese Anleitung gilt für die **Dashboard-/Lovelace-Auslieferung** von Gewitterradar aus `TheDaimos/gewitterradar-dashboard`.
 
@@ -165,7 +165,7 @@ Nach einer Ressourcenänderung den Browser vollständig neu laden; bei hartnäck
 
 Nach der Installation prüfen:
 
-- Gewitterradar zeigt **V4.07.56**;
+- Gewitterradar zeigt **V4.07.57**;
 - `/hacsfiles/gewitterradar-dashboard/gewitterradar.js` ist die einzige aktive Gewitterradar-Ressource;
 - `assets/` und `locales/about-locales.js` sind im HACS-Ordner vorhanden;
 - `/config/packages/app_gewitterradar_v4_07_pkg.yaml` ist aktiv;
