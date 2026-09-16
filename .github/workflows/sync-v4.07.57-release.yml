@@ -1,3 +1,4 @@
+# Retry from the final release branch head; do not mutate this branch until staging completes.
 name: Stage Dashboard V4.07.57 release
 
 on:
