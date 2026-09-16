@@ -44,7 +44,7 @@ Accepted payload identities:
 
 ## Installation
 
-Gewitterradar can be added as a custom **Dashboard** repository in HACS:
+Add Gewitterradar to HACS as a custom **Dashboard** repository:
 
 ```text
 https://github.com/TheDaimos/gewitterradar-dashboard
@@ -56,31 +56,11 @@ The module resource is:
 /hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
-The HACS Dashboard download installs the card and its assets, but it does not create a Dashboard View automatically.
+Under **Settings → Dashboards → Resources**, verify that this path is loaded as a JavaScript module.
 
-A minimal example is:
+### Activate the V4.07 package
 
-```yaml
-title: Gewitterradar
-path: gewitterradar
-icon: mdi:weather-lightning
-type: panel
-cards:
-  - type: vertical-stack
-    cards:
-      - type: custom:gewitterradar-card
-        counter_entity: sensor.home_lightning_counter
-        radius_entity: input_number.lightning_detection_observation_radius
-        compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
-```
-
-The actual card type is:
-
-```yaml
-type: custom:gewitterradar-card
-```
-
-When the YAML helper package is used, copy:
+HACS Dashboard repositories cannot deploy configuration files directly into `/config/packages/`. Copy:
 
 ```text
 /config/www/community/gewitterradar-dashboard/app_gewitterradar_v4_07_pkg.yaml
@@ -92,9 +72,54 @@ to:
 /config/packages/app_gewitterradar_v4_07_pkg.yaml
 ```
 
-and restart Home Assistant. HACS Dashboard repositories cannot deploy configuration files directly into `/config/packages/`.
+and perform a full Home Assistant restart.
 
-The historical V4.06 package remains in the repository for rollback/migration purposes. New V4.07 installations use `app_gewitterradar_v4_07_pkg.yaml`.
+Do **not** load the historical V4.06 and V4.07 packages at the same time. Both intentionally define the same `lightning_detection_*` helpers.
+
+### Create the Dashboard View
+
+The HACS download installs the card and its assets, but it does **not** create a Dashboard View automatically.
+
+Create a Panel/one-card View and add a **Manual card** with this minimal configuration:
+
+```yaml
+type: custom:gewitterradar-card
+```
+
+Complete View example:
+
+```yaml
+views:
+  - title: Gewitterradar
+    path: gewitterradar
+    icon: mdi:weather-lightning
+    type: panel
+    cards:
+      - type: custom:gewitterradar-card
+```
+
+If the Blitzortung counter is not named `sensor.home_lightning_counter`, it can be specified explicitly:
+
+```yaml
+type: custom:gewitterradar-card
+counter_entity: sensor.YOUR_LIGHTNING_COUNTER
+```
+
+The V4.07 package provides the remaining Gewitterradar helpers; the old explicit `radius_entity` and `compass_mode_entity` lines are no longer required in the standard example.
+
+### Worldwide reference tracker
+
+The Dashboard package provides:
+
+```text
+device_tracker.gewitterradar_dashboard
+```
+
+Select this tracker once in the Blitzortung.org integration as its **Location entity**. Later location changes are performed from Gewitterradar; Blitzortung.org remains responsible for its data region and re-subscription behavior.
+
+### Recorder protection
+
+Excluding the short-lived lightning entities from long-term Recorder storage is strongly recommended. See the detailed installation guide and `docs/RECORDER.md`.
 
 Detailed instructions:
 
