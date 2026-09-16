@@ -1,5 +1,14 @@
 # Changelog
 
+## V4.07.57 · 2026/09 — public Dashboard release
+
+- Derived the Dashboard/HACS payload byte-for-byte from canonical Gewitterradar commit `3f3f3c1a574db529d3ac623681fdec4298b26605`.
+- Frontend SHA256: `ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571`.
+- External locale SHA256: `997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436`.
+- V4.07 package SHA256: `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`.
+- Publishes the rewritten Dashboard installation documentation and the same V4.07.57 version/build metadata as the canonical product release.
+- Runtime behavior remains the protected V4.07.56 baseline; no Dashboard product logic was changed for this documentation/install patch.
+
 ## V4.07.56 · 2026/09 — prepared derived Dashboard candidate
 
 - Derived the Dashboard payload from canonical Gewitterradar commit `3c7817162f9619837f3be8d2048a79cdb04ca8bb`.
@@ -9,7 +18,7 @@
 - Includes worldwide place/postcode search and direct coordinates, the accepted 19-language Help/locale scope, V4.07.54 locked normal UI/function behavior and the protected V4.07.56 diagnostic toolset.
 - Preserves the historical V4.06 package for rollback/migration while using `app_gewitterradar_v4_07_pkg.yaml` for V4.07.
 - Adds exact candidate validation for JavaScript, locale module, package checksum inventory and HACS Dashboard packaging.
-- Public V4.06 remains the current release until V4.07.56 is explicitly published; earlier tags and frozen branches remain immutable.
+- V4.07.56 remains preserved as the protected runtime/diagnostic baseline; earlier tags and frozen branches remain immutable.
 
 ## V4.06 · 2026/09 — unified product release
 
