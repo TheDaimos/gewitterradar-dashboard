@@ -1,0 +1,124 @@
+name: Sync Dashboard V4.07.56 candidate
+
+on:
+  push:
+    branches:
+      - finalize/v4.07.56-derived
+    paths:
+      - .github/workflows/sync-v4.07.56-candidate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CANONICAL_REPOSITORY: TheDaimos/gewitterradar
+  CANONICAL_SHA: 3c7817162f9619837f3be8d2048a79cdb04ca8bb
+  FRONTEND_SHA256: 249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a
+  FRONTEND_SIZE: '1955141'
+  LOCALE_SHA256: 997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436
+  PACKAGE_SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
+
+jobs:
+  sync-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out derived Dashboard candidate branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download exact accepted canonical commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="${RUNNER_TEMP}/canonical-v40756"
+          mkdir -p "${tmp}"
+          curl -fL --retry 3 \
+            "https://github.com/${CANONICAL_REPOSITORY}/archive/${CANONICAL_SHA}.zip" \
+            -o "${tmp}/canonical.zip"
+          unzip -q "${tmp}/canonical.zip" -d "${tmp}"
+          src="$(find "${tmp}" -mindepth 1 -maxdepth 1 -type d -name 'gewitterradar-*' | head -n1)"
+          test -n "${src}"
+          echo "CANONICAL_SOURCE=${src}" >> "${GITHUB_ENV}"
+
+      - name: Verify canonical V4.07.56 payload before copying
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="${CANONICAL_SOURCE}"
+          test "$(stat -c%s "${src}/dashboard/dist/gewitterradar.js")" = "${FRONTEND_SIZE}"
+          echo "${FRONTEND_SHA256}  ${src}/dashboard/dist/gewitterradar.js" | sha256sum -c -
+          echo "${LOCALE_SHA256}  ${src}/dashboard/dist/locales/about-locales.js" | sha256sum -c -
+          echo "${PACKAGE_SHA256}  ${src}/dashboard/dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
+          cmp "${src}/frontend/gewitterradar.js" "${src}/dashboard/dist/gewitterradar.js"
+          cmp "${src}/frontend/locales/about-locales.js" "${src}/dashboard/dist/locales/about-locales.js"
+          test -f "${src}/dashboard/dist/app_gewitterradar_v4_06_pkg.yaml"
+          test -f "${src}/docs/RELEASE_NOTES_V4_07_56.md"
+
+      - name: Replace derived payload from canonical source
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="${CANONICAL_SOURCE}"
+          rm -rf dist
+          cp -a "${src}/dashboard/dist" dist
+          cp "${src}/docs/RELEASE_NOTES_V4_07_56.md" RELEASE_NOTES_V4_07_56.md
+          cp "${src}/docs/HISTORY.md" docs/HISTORY.md
+          cp "${src}/docs/MILESTONES.md" docs/MILESTONES.md
+          cp "${src}/docs/RELEASE_PROCESS.md" docs/RELEASE_PROCESS.md
+          cp "${src}/docs/RECORDER.md" docs/RECORDER.md
+          cat > docs/V4_07_56_DERIVED_CANDIDATE.md <<EOF
+          # V4.07.56 derived Dashboard candidate
+
+          This branch is a derived Dashboard/HACS candidate from the exact canonical Gewitterradar commit:
+
+          \`${CANONICAL_SHA}\`
+
+          Canonical repository: \`${CANONICAL_REPOSITORY}\`
+
+          Expected identities:
+
+          - \`dist/gewitterradar.js\`: ${FRONTEND_SIZE} bytes, SHA256 \`${FRONTEND_SHA256}\`
+          - \`dist/locales/about-locales.js\`: SHA256 \`${LOCALE_SHA256}\`
+          - \`dist/app_gewitterradar_v4_07_pkg.yaml\`: SHA256 \`${PACKAGE_SHA256}\`
+
+          This candidate branch does **not** publish a tag, release or change Dashboard \`main\`. Public V4.06 remains untouched until the canonical product promotion is explicitly approved.
+          EOF
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+
+      - name: Validate exact derived candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check dist/gewitterradar.js
+          test "$(stat -c%s dist/gewitterradar.js)" = "${FRONTEND_SIZE}"
+          echo "${FRONTEND_SHA256}  dist/gewitterradar.js" | sha256sum -c -
+          echo "${LOCALE_SHA256}  dist/locales/about-locales.js" | sha256sum -c -
+          echo "${PACKAGE_SHA256}  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
+          sha256sum -c SHA256SUMS.txt
+          grep -Fq '4.07.56' dist/gewitterradar.js
+          test -f dist/app_gewitterradar_v4_06_pkg.yaml
+          test -f dist/app_gewitterradar_v4_07_pkg.yaml
+          test -f RELEASE_NOTES_V4_07_56.md
+
+      - name: HACS Dashboard candidate validation
+        uses: hacs/action@main
+        with:
+          category: plugin
+          ignore: license images
+
+      - name: Commit exact derived candidate to candidate branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist RELEASE_NOTES_V4_07_56.md SHA256SUMS.txt docs/HISTORY.md docs/MILESTONES.md docs/RELEASE_PROCESS.md docs/RECORDER.md docs/V4_07_56_DERIVED_CANDIDATE.md
+          if git diff --cached --quiet; then
+            echo "Derived V4.07.56 candidate is already synchronized."
+            exit 0
+          fi
+          git commit -m "Sync derived Dashboard V4.07.56 candidate"
+          git push origin HEAD:finalize/v4.07.56-derived
