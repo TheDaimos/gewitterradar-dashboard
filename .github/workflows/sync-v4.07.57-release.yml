@@ -50,7 +50,7 @@ jobs:
           echo "$PACKAGE_SHA256  $src/dashboard/dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
           cmp "$src/frontend/gewitterradar.js" "$src/dashboard/dist/gewitterradar.js"
           grep -Fq "const CARD_VERSION = '4.07.57';" "$src/dashboard/dist/gewitterradar.js"
-          grep -Fq "V4.07-RELEASE57-2026-09-16" "$src/dashboard/dist/gewitterradar.js"
+          grep -Fq 'V4.07-RELEASE57-2026-09-16' "$src/dashboard/dist/gewitterradar.js"
 
       - name: Synchronize exact Dashboard payload and release docs
         shell: bash
@@ -72,13 +72,11 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-
           old_sha='249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a'
           new_sha='ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571'
           canonical='3f3f3c1a574db529d3ac623681fdec4298b26605'
 
-          p=Path('README.md')
-          s=p.read_text(encoding='utf-8')
+          p=Path('README.md'); s=p.read_text(encoding='utf-8')
           s=s.replace('Gewitterradar-V4.07.56-c9a45b','Gewitterradar-V4.07.57-c9a45b')
           s=s.replace('Public%20Stable-V4.06-lightgrey','Public%20Stable-V4.07.57-lightgrey')
           s=s.replace('RELEASE_NOTES_V4_07_56.md">RELEASE_NOTES_V4_07_56.md','RELEASE_NOTES_V4_07_57.md">RELEASE_NOTES_V4_07_57.md')
@@ -88,80 +86,24 @@ jobs:
           s=s.replace('Veröffentlichte Tags und eingefrorene Release-Branches bleiben unverändert. V4.05 und V4.06 werden durch die V4.07.56-Vorbereitung nicht rückwirkend verändert.','V4.07.57 ist aus dem exakt veröffentlichten kanonischen Gewitterradar-Commit abgeleitet. Frühere Tags und eingefrorene Release-Branches bleiben unverändert.')
           marker='Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonischen Gewitterradar-Projekts:\n\n```text\nTheDaimos/gewitterradar\n```'
           if marker in s:
-              s=s.replace(marker, marker + f'\n\nKanonischer V4.07.57-Commit: `{canonical}`')
+              s=s.replace(marker,marker+f'\n\nKanonischer V4.07.57-Commit: `{canonical}`')
           p.write_text(s,encoding='utf-8')
 
           for name in ['docs/INSTALLATION_DE.md','docs/INSTALLATION_EN.md']:
-              p=Path(name); s=p.read_text(encoding='utf-8')
-              s=s.replace('V4.07.56','V4.07.57').replace(old_sha,new_sha)
-              p.write_text(s,encoding='utf-8')
+              p=Path(name); t=p.read_text(encoding='utf-8')
+              t=t.replace('V4.07.56','V4.07.57').replace(old_sha,new_sha)
+              p.write_text(t,encoding='utf-8')
 
           p=Path('CHANGELOG.md'); s=p.read_text(encoding='utf-8')
           header='# Changelog\n\n'
           entry=f'''## V4.07.57 · 2026/09 — public Dashboard release\n\n- Derived the Dashboard/HACS payload byte-for-byte from canonical Gewitterradar commit `{canonical}`.\n- Frontend SHA256: `{new_sha}`.\n- External locale SHA256: `997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436`.\n- V4.07 package SHA256: `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`.\n- Publishes the rewritten Dashboard installation documentation and the same V4.07.57 version/build metadata as the canonical product release.\n- Runtime behavior remains the protected V4.07.56 baseline; no Dashboard product logic was changed for this documentation/install patch.\n\n'''
           if not s.startswith(header): raise SystemExit('CHANGELOG header changed')
-          if '## V4.07.57 · 2026/09' not in s:
-              s=header+entry+s[len(header):]
+          if '## V4.07.57 · 2026/09' not in s: s=header+entry+s[len(header):]
           s=s.replace('- Public V4.06 remains the current release until V4.07.56 is explicitly published; earlier tags and frozen branches remain immutable.','- V4.07.56 remains preserved as the protected runtime/diagnostic baseline; earlier tags and frozen branches remain immutable.')
           p.write_text(s,encoding='utf-8')
           PY
 
-      - name: Update exact Dashboard validation contract
-        shell: bash
-        run: |
-          cat > .github/workflows/validate.yml <<'EOF'
-          name: Validate HACS Dashboard V4.07.57
-
-          on:
-            push:
-            pull_request:
-            schedule:
-              - cron: "0 0 * * *"
-            workflow_dispatch:
-
-          permissions: {}
-
-          jobs:
-            verify-dist:
-              runs-on: ubuntu-latest
-              permissions:
-                contents: read
-              steps:
-                - uses: actions/checkout@v4
-                  with:
-                    fetch-depth: 0
-                - name: Verify frozen V4.05 remains untouched
-                  run: |
-                    set -euo pipefail
-                    expected="44a3a615f76a7d865c2d6c8690728656c18577b9"
-                    test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"
-                    test "$(git rev-parse 'refs/remotes/origin/frozen/v4.05^{commit}')" = "${expected}"
-                - name: Verify exact derived V4.07.57 distribution
-                  run: |
-                    set -euo pipefail
-                    node --check dist/gewitterradar.js
-                    test "$(stat -c%s dist/gewitterradar.js)" = "1955144"
-                    echo "ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571  dist/gewitterradar.js" | sha256sum -c -
-                    echo "997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436  dist/locales/about-locales.js" | sha256sum -c -
-                    echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
-                    test -f dist/app_gewitterradar_v4_06_pkg.yaml
-                    test -f RELEASE_NOTES_V4_07_57.md
-                    test -f dist/assets/gewitterradar-about-close-premium.webp
-                    test -f dist/assets/gewitterradar-about-copy-scroll.webp
-                    test ! -e dist/app_gewitterradar_pkg.yaml
-                    grep -Fq "const CARD_VERSION = '4.07.57';" dist/gewitterradar.js
-                    grep -Fq 'V4.07-RELEASE57-2026-09-16' dist/gewitterradar.js
-                    sha256sum -c SHA256SUMS.txt
-            validate-hacs:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: hacs/action@main
-                  with:
-                    category: plugin
-                    ignore: license images
-          EOF
-
-      - name: Add controlled Dashboard publisher trigger
+      - name: Add Dashboard release marker
         shell: bash
         run: |
           mkdir -p docs/archive-triggers
@@ -190,13 +132,16 @@ jobs:
           category: plugin
           ignore: license images
 
-      - name: Commit staged V4.07.57 release
+      - name: Commit staged V4.07.57 release payload
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .github/workflows/sync-v4.07.57-release.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'release: stage Dashboard V4.07.57'
+          git add README.md CHANGELOG.md RELEASE_NOTES_V4_07_57.md SHA256SUMS.txt dist docs
+          if git diff --cached --quiet; then
+            echo 'Dashboard V4.07.57 payload already staged.'
+            exit 0
+          fi
+          git commit -m 'release: stage Dashboard V4.07.57 payload'
           git push origin HEAD:release/v4.07.57
