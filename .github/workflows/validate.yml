@@ -1,4 +1,4 @@
-name: Validate HACS Dashboard V4.06
+name: Validate HACS Dashboard V4.07.56
 
 on:
   push:
@@ -18,25 +18,28 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Verify frozen V4.05 remains untouched
         run: |
           set -euo pipefail
           expected="44a3a615f76a7d865c2d6c8690728656c18577b9"
           test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"
           test "$(git rev-parse 'refs/remotes/origin/frozen/v4.05^{commit}')" = "${expected}"
-      - name: Verify V4.06 distribution
+
+      - name: Verify exact derived V4.07.56 distribution
         run: |
           set -euo pipefail
           node --check dist/gewitterradar.js
-          echo "599ab9f0035b979c0932f5f02f1c40bf0e11d36e6093d7f1a1067b8cb24d71ee  dist/gewitterradar.js" | sha256sum -c -
-          test -f dist/locales/about-locales.js
+          echo "249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a  dist/gewitterradar.js" | sha256sum -c -
+          echo "997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436  dist/locales/about-locales.js" | sha256sum -c -
+          echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
           test -f dist/app_gewitterradar_v4_06_pkg.yaml
+          test -f RELEASE_NOTES_V4_07_56.md
           test -f dist/assets/gewitterradar-about-close-premium.webp
           test -f dist/assets/gewitterradar-about-copy-scroll.webp
           test ! -e dist/app_gewitterradar_pkg.yaml
-          grep -Fq '${BUILD_YYYY_MM} · V${CARD_VERSION} · Gewitterradar · by CK' dist/gewitterradar.js
-          grep -Fq "V4.05 · 2026/09" dist/gewitterradar.js
-          grep -Fq "V4.07 · PLANNED" dist/gewitterradar.js
+          grep -Fq '4.07.56' dist/gewitterradar.js
+          grep -Fq 'V4.07-TEST56-2026-09-16' dist/gewitterradar.js
           sha256sum -c SHA256SUMS.txt
 
   validate-hacs:
