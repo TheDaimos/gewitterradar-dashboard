@@ -2,31 +2,40 @@
 
 **Gewitterradar** is a Home Assistant dashboard card for live lightning and thunderstorm visualization using data supplied by the Home Assistant Blitzortung.org integration.
 
-Stable channel: **Latest** — currently **V4.06**
+Stable public release: **V4.06**  
+Current prepared Dashboard candidate: **V4.07.56**
 
 ## Repository role
 
 For users and development there is one product: **Gewitterradar**. The native Home Assistant Integration and the Dashboard/Card are two delivery forms of the same project.
 
-Current public delivery repositories:
+- Canonical product repository: `TheDaimos/gewitterradar`
+- Derived Dashboard/HACS delivery: `TheDaimos/gewitterradar-dashboard`
 
-- **Canonical product / native Home Assistant Integration:** `TheDaimos/gewitterradar`
-- **Derived Dashboard/Card delivery:** this repository, `TheDaimos/gewitterradar-dashboard`
+Ordinary product development takes place only in the canonical repository. This repository is synchronized from the accepted canonical state.
 
-The published V4.05 Dashboard release remains frozen and unchanged. V4.06 is derived from the canonical `TheDaimos/gewitterradar` V4.06 release and does not rewrite any earlier tag or frozen backup branch.
+The V4.07.56 Dashboard candidate is derived from canonical commit:
+
+`3c7817162f9619837f3be8d2048a79cdb04ca8bb`
+
+Accepted payload identities:
+
+- `dist/gewitterradar.js` — SHA256 `249485f4bcf68c9b23b821cae9b507030ae09cff5a56f7e28d3d7f3b02eb4a1a`
+- `dist/locales/about-locales.js` — SHA256 `997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436`
+- `dist/app_gewitterradar_v4_07_pkg.yaml` — SHA256 `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`
 
 ## Highlights
 
 - Live lightning visualization
 - Observation, storm and danger zones
-- Stable cluster and individual-strike navigation
+- Cluster and individual-strike modes
 - Recent activity, KPI/status panels and 120-minute activity history
-- Multiple calibrated compass designs with optional device orientation
-- 19 selectable language variants
-- Metric and imperial distance display
+- Multiple calibrated compass designs and trend medallion
+- Worldwide place/postcode search plus direct coordinates
+- 15 languages plus 4 German dialect variants = 19 variants
+- Full Help & Notes and Recorder guidance
 - Responsive layouts for phones, tablets, iPad and desktop
-- Premium first-start **Über Gewitterradar** onboarding, re-openable from Settings
-- Dynamic radius explanation, Blitzortung.org acknowledgement and Recorder guidance
+- Protected V4.07.56 diagnostics including virtual storm cells, EXTREM and medallion states
 
 ## Requirements
 
@@ -35,42 +44,21 @@ The published V4.05 Dashboard release remains frozen and unchanged. V4.06 is der
 
 ## Installation
 
-See:
-
-- [Installation – Deutsch](docs/INSTALLATION_DE.md)
-- [Installation – English](docs/INSTALLATION_EN.md)
-- [Repository rename / HACS migration](docs/REPOSITORY_RENAME.md)
-- [Home Assistant Recorder recommendation](docs/RECORDER.md)
-
-Gewitterradar can be installed as a custom **Dashboard** repository in HACS:
+Gewitterradar can be added as a custom **Dashboard** repository in HACS:
 
 ```text
 https://github.com/TheDaimos/gewitterradar-dashboard
 ```
 
-Do not add `TheDaimos/gewitterradar` as a Dashboard repository; that repository contains the canonical Gewitterradar product and native Home Assistant Integration.
-
-For a normal installation, use the default **newest / Latest** version offered by HACS. Do not deliberately select a fixed older version unless you need a rollback or a specific compatibility state. HACS checks the repository for newer releases and can offer future Gewitterradar updates automatically.
-
-With the current repository name, HACS installs the dashboard under `/config/www/community/gewitterradar-dashboard/` and exposes it through `/hacsfiles/gewitterradar-dashboard/`. The module resource is:
+The module resource is:
 
 ```text
 /hacsfiles/gewitterradar-dashboard/gewitterradar.js
 ```
 
-V4.06 installs the final `gewitterradar.js`, the complete required `assets/` directory, `locales/about-locales.js` and the staged helper package `app_gewitterradar_v4_06_pkg.yaml` below `/config/www/community/gewitterradar-dashboard/`.
+The HACS Dashboard download installs the card and its assets, but it does not create a Dashboard View automatically.
 
-## Nach dem HACS-Download: Gewitterradar-View anlegen
-
-**Wichtig:** Der HACS-Download installiert die Karte und ihre Assets, legt aber keine Home-Assistant-Dashboard-View für dich an. Nach der Installation muss Gewitterradar einmal in einem Dashboard eingebunden werden.
-
-Prüfe zuerst unter **Einstellungen → Dashboards → Ressourcen**, dass diese Modulressource vorhanden ist:
-
-```text
-/hacsfiles/gewitterradar-dashboard/gewitterradar.js
-```
-
-Lege danach eine neue View an bzw. bearbeite dein gewünschtes Dashboard im YAML-Modus. Ein vollständiges Beispiel ist:
+A minimal example is:
 
 ```yaml
 title: Gewitterradar
@@ -86,46 +74,49 @@ cards:
         compass_mode_entity: input_boolean.lightning_detection_compass_nearest_strike
 ```
 
-Der eigentliche Kartentyp ist:
+The actual card type is:
 
 ```yaml
 type: custom:gewitterradar-card
 ```
 
-Die drei Beispiel-Entity-IDs oben entsprechen der bisherigen Package-/Legacy-Konfiguration. Bei einer Installation mit der nativen Gewitterradar-Integration werden die gemeinsame Frontend-/Konfigurationsanbindung und eine vereinfachte Neunutzer-Einrichtung im Rahmen der laufenden Produktkonvergenz vereinheitlicht. Bis diese gemeinsame Auslieferung veröffentlicht ist, gilt die vollständige Installationsanleitung unter [`docs/INSTALLATION_DE.md`](docs/INSTALLATION_DE.md).
-
-The package still requires one manual step when the YAML helper package is used: copy
+When the YAML helper package is used, copy:
 
 ```text
-/config/www/community/gewitterradar-dashboard/app_gewitterradar_v4_06_pkg.yaml
+/config/www/community/gewitterradar-dashboard/app_gewitterradar_v4_07_pkg.yaml
 ```
 
-to
+to:
 
 ```text
-/config/packages/app_gewitterradar_v4_06_pkg.yaml
+/config/packages/app_gewitterradar_v4_07_pkg.yaml
 ```
 
 and restart Home Assistant. HACS Dashboard repositories cannot deploy configuration files directly into `/config/packages/`.
 
-Installations created before the repository rename may still contain the old `/hacsfiles/gewitterradar/` resource or `/config/www/community/gewitterradar/` directory. **Do not Update or Redownload the stale old HACS Dashboard entry `TheDaimos/gewitterradar`**, because that repository name now belongs to the canonical Gewitterradar product/native Integration. Add and verify `TheDaimos/gewitterradar-dashboard` first, then clean up the stale old Dashboard entry/resource. Follow [the rename/migration note](docs/REPOSITORY_RENAME.md) for the safe order.
+The historical V4.06 package remains in the repository for rollback/migration purposes. New V4.07 installations use `app_gewitterradar_v4_07_pkg.yaml`.
 
-The canonical V4.06 package source is maintained in `TheDaimos/gewitterradar`; `dist/app_gewitterradar_v4_06_pkg.yaml` is the derived Dashboard/HACS convenience copy delivered together with the card.
+Detailed instructions:
 
-## Release
+- [Installation – Deutsch](docs/INSTALLATION_DE.md)
+- [Installation – English](docs/INSTALLATION_EN.md)
+- [Repository rename / HACS migration](docs/REPOSITORY_RENAME.md)
+- [Recorder recommendation](docs/RECORDER.md)
 
-V4.04 remains frozen at commit `8ada0e06aef47627d31224b9e46d58de459fb24b`. The `v4.04` tag and `frozen/v4.04` backup branch are checked by CI against that exact commit.
+## Release model
 
-V4.05 remains the protected predecessor. V4.06 publishes the fully validated unified-product Dashboard delivery derived from the canonical V4.06 tag. It retains the proven HACS distribution rule: the GitHub release publishes **zero custom release assets**, forcing HACS to install the complete tagged `dist/` tree rather than an incomplete standalone release asset.
+Published tags and frozen release branches remain immutable. V4.05 and V4.06 are not rewritten by the V4.07.56 preparation.
 
-Stable Dashboard releases are published as GitHub **Latest** releases. See [Release policy](docs/RELEASE_POLICY.md).
+V4.07.56 is prepared from the exact accepted canonical Gewitterradar state and is validated independently in this derived repository before public release.
 
-See [V4.06 release notes](RELEASE_NOTES_V4_06.md), [CHANGELOG.md](CHANGELOG.md), and the [V4.04 HACS package-staging note](docs/HACS_V4_04_PACKAGE_STAGING.md) for the unchanged package-delivery model.
+The GitHub/HACS release continues to publish **no custom release assets**, so HACS installs the complete tagged `dist/` tree rather than an incomplete standalone asset.
+
+See [V4.07.56 release notes](RELEASE_NOTES_V4_07_56.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Data source
 
-The live lightning data displayed by Gewitterradar is supplied through the Home Assistant Blitzortung.org integration. The number of simultaneously available lightning events depends on the integration configuration, including detection radius, time window and maximum number of lightning events.
+Live lightning data is supplied through the Home Assistant Blitzortung.org integration. The number of simultaneously available lightning events depends on that integration's configuration, including detection radius, time window and maximum event count.
 
 ## License
 
-No software license has been selected for this repository yet. Until a license is added, the source remains subject to the default copyright rules applicable to the repository owner.
+No software license has been selected for this derived repository yet. Until a license is added, the source remains subject to the default copyright rules applicable to the repository owner.
