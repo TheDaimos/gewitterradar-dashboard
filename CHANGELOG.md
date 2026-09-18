@@ -1,5 +1,16 @@
 # Changelog
 
+## V4.08 · 2026/09 — public Dashboard release
+
+- Derived the Dashboard/HACS runtime byte-for-byte from canonical Gewitterradar commit `27da94e5043a365dbe8ea5c5e2224327165750fa`.
+- Public product version: **V4.08**, based on the accepted internal V4.08.40 RC with release-metadata-only normalization.
+- Frontend: **2.028.645 bytes**, SHA256 `b75390652fae4aa98c77162fb207d97ece408ab617bbf107bcb0f3b9466a691f`.
+- External locale: **705.974 bytes**, SHA256 `a57493b6291671696aeb87c267595e3ce5fede987546f702d7883ef6f07bd288`.
+- Adds the V4.08 cluster-resolution profiles **Früh / Ausgewogen / Spät / Klassisch · V4.07.56** and the accepted cluster-navigation session behavior.
+- Keeps the existing V4.07 YAML package unchanged, SHA256 `1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694`; V4.08.40 introduced no new Dashboard helper package.
+- Refreshes the repository/HACS presentation with absolute branding paths and the existing Hero artwork.
+- New product development begins only on **V4.09.xx**.
+
 ## V4.07.57 · 2026/09 — public Dashboard release
 
 - Derived the Dashboard/HACS payload byte-for-byte from canonical Gewitterradar commit `3f3f3c1a574db529d3ac623681fdec4298b26605`.
