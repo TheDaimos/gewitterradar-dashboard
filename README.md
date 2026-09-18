@@ -1,17 +1,19 @@
 <div align="center">
 
-<img src="dist/assets/gewitterradar-brand-icon.png" width="170" alt="Gewitterradar Logo">
+<img src="https://raw.githubusercontent.com/TheDaimos/gewitterradar-dashboard/main/dist/assets/gewitterradar-brand-icon.png" width="170" alt="Gewitterradar Logo">
 
 # Gewitterradar — Dashboard
 
 ### Live-Blitz- und Gewitterdarstellung für Home Assistant
 
+<img src="https://raw.githubusercontent.com/TheDaimos/gewitterradar-dashboard/main/dist/assets/gewitterradar-about-hero-v2.webp" width="920" alt="Gewitterradar · Gewitterlandschaft">
+
 **Dashboard-/Lovelace-Auslieferung · HACS · V4.07-Package · weltweite Referenzorte · 120-Minuten-Verlauf**
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Dashboard-41BDF5?logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Dashboard-41BDF5)
-![Version](https://img.shields.io/badge/Gewitterradar-V4.07.57-c9a45b)
-![Stable](https://img.shields.io/badge/Public%20Stable-V4.07.57-lightgrey)
+![Version](https://img.shields.io/badge/Gewitterradar-V4.08-c9a45b)
+![Stable](https://img.shields.io/badge/Public%20Stable-V4.08-lightgrey)
 
 </div>
 
@@ -533,7 +535,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 </tr>
 <tr>
 <td><strong>Release Notes</strong></td>
-<td><a href="RELEASE_NOTES_V4_07_57.md">RELEASE_NOTES_V4_07_57.md</a></td>
+<td><a href="RELEASE_NOTES_V4_08.md">RELEASE_NOTES_V4_08.md</a></td>
 </tr>
 </table>
 
@@ -544,7 +546,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 
 <br>
 
-Aktueller öffentlicher Dashboard-Stand: **V4.07.57**
+Aktueller öffentlicher Dashboard-Stand: **V4.08**
 
 Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonischen Gewitterradar-Projekts:
 
@@ -552,22 +554,22 @@ Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonisch
 TheDaimos/gewitterradar
 ```
 
-Kanonischer V4.07.57-Commit: `3f3f3c1a574db529d3ac623681fdec4298b26605`
+Kanonischer V4.08-Commit: `27da94e5043a365dbe8ea5c5e2224327165750fa`
 
-V4.07.57-Payload-Identitäten:
+V4.08-Payload-Identitäten:
 
 ```text
 dist/gewitterradar.js
-SHA256: ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571
+SHA256: b75390652fae4aa98c77162fb207d97ece408ab617bbf107bcb0f3b9466a691f
 
 dist/locales/about-locales.js
-SHA256: 997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436
+SHA256: a57493b6291671696aeb87c267595e3ce5fede987546f702d7883ef6f07bd288
 
 dist/app_gewitterradar_v4_07_pkg.yaml
 SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
 ```
 
-V4.07.57 ist aus dem exakt veröffentlichten kanonischen Gewitterradar-Commit abgeleitet. Frühere Tags und eingefrorene Release-Branches bleiben unverändert.
+V4.08 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.08-Frontend abgeleitet. Das weiterhin verwendete V4.07-YAML-Package bleibt unverändert; frühere Tags und eingefrorene Release-Branches bleiben unverändert.
 
 </details>
 
