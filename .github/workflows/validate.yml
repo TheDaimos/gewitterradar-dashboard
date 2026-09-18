@@ -1,4 +1,4 @@
-name: Validate HACS Dashboard V4.07.57
+name: Validate HACS Dashboard V4.08
 
 on:
   push:
@@ -26,21 +26,21 @@ jobs:
           test "$(git rev-parse 'refs/tags/v4.05^{commit}')" = "${expected}"
           test "$(git rev-parse 'refs/remotes/origin/frozen/v4.05^{commit}')" = "${expected}"
 
-      - name: Verify exact derived V4.07.57 distribution
+      - name: Verify exact derived V4.08 distribution
         run: |
           set -euo pipefail
           node --check dist/gewitterradar.js
-          test "$(stat -c%s dist/gewitterradar.js)" = "1955144"
-          echo "ac921b5fc40f2d7f36733bb7262fdb1595790674695ad0eb83ccde8bc7146571  dist/gewitterradar.js" | sha256sum -c -
-          echo "997c4fe9b357935888fdb7bedc43cdd17f105b97241a000324891cea575dd436  dist/locales/about-locales.js" | sha256sum -c -
+          test "$(stat -c%s dist/gewitterradar.js)" = "2028645"
+          echo "b75390652fae4aa98c77162fb207d97ece408ab617bbf107bcb0f3b9466a691f  dist/gewitterradar.js" | sha256sum -c -
+          echo "a57493b6291671696aeb87c267595e3ce5fede987546f702d7883ef6f07bd288  dist/locales/about-locales.js" | sha256sum -c -
           echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
           test -f dist/app_gewitterradar_v4_06_pkg.yaml
-          test -f RELEASE_NOTES_V4_07_57.md
+          test -f RELEASE_NOTES_V4_08.md
           test -f dist/assets/gewitterradar-about-close-premium.webp
           test -f dist/assets/gewitterradar-about-copy-scroll.webp
           test ! -e dist/app_gewitterradar_pkg.yaml
-          grep -Fq "const CARD_VERSION = '4.07.57';" dist/gewitterradar.js
-          grep -Fq 'V4.07-RELEASE57-2026-09-16' dist/gewitterradar.js
+          grep -Fq "const CARD_VERSION = '4.08';" dist/gewitterradar.js
+          grep -Fq 'V4.08-RELEASE-2026-09-18' dist/gewitterradar.js
           sha256sum -c SHA256SUMS.txt
 
   validate-hacs:
