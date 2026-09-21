@@ -1,0 +1,116 @@
+name: Publish Dashboard V4.09
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/archive-triggers/V4_09_PUBLISH.trigger'
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  VERSION: v4.09
+  FRONTEND_SHA256: c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2
+  FRONTEND_SIZE: '2238824'
+  LOCALE_SHA256: dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e
+  CANONICAL_SHA: a6a5b68ebc289f04217bc5abb55c46422dce4e4c
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify canonical V4.09 is already public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=$(gh api "/repos/TheDaimos/gewitterradar/releases/tags/v4.09" --jq '.target_commitish')
+          test "$target" = "$CANONICAL_SHA"
+          tag_sha=$(gh api "/repos/TheDaimos/gewitterradar/git/ref/tags/v4.09" --jq '.object.sha')
+          test "$tag_sha" = "$CANONICAL_SHA"
+
+      - name: Verify exact Dashboard V4.09 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(stat -c%s dist/gewitterradar.js)" = "$FRONTEND_SIZE"
+          echo "$FRONTEND_SHA256  dist/gewitterradar.js" | sha256sum -c -
+          echo "$LOCALE_SHA256  dist/locales/about-locales.js" | sha256sum -c -
+          echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
+          grep -Fq "const CARD_VERSION = '4.08';" dist/gewitterradar.js
+          grep -Fq 'V4.09-RELEASE-2026-09-18' dist/gewitterradar.js
+          test -f RELEASE_NOTES_V4_09.md
+          test -f dist/assets/gewitterradar-compass-toggle.png
+          echo "bd6ce5bbd20a9db8af174f14ff284461c41e0ee620443f5e42b9c298e9072a0a  dist/assets/gewitterradar-compass-toggle.png" | sha256sum -c -
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Wait for post-merge Dashboard validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          for attempt in $(seq 1 80); do
+            data="$(gh api -H 'Accept: application/vnd.github+json' "/repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${sha}&per_page=100")"
+            state="$(python -c 'import json,sys; d=json.load(sys.stdin); r=[x for x in d["workflow_runs"] if x["name"]=="Validate HACS Dashboard V4.09"]; print("missing" if not r else r[0]["status"]+":"+str(r[0].get("conclusion")))' <<<"$data")"
+            echo "Dashboard validation: $state"
+            if [[ "$state" == "completed:success" ]]; then exit 0; fi
+            if [[ "$state" == completed:* && "$state" != "completed:success" ]]; then exit 1; fi
+            sleep 10
+          done
+          echo 'Timed out waiting for Dashboard validation.' >&2
+          exit 1
+
+      - name: Freeze exact Dashboard release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          existing=''
+          if value="$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.09" --jq '.object.sha' 2>/dev/null)"; then
+            existing="$value"
+          fi
+          if [[ -n "$existing" && "$existing" != "$sha" ]]; then
+            echo "Frozen branch already points to $existing, expected $sha" >&2
+            exit 1
+          fi
+          if [[ -z "$existing" ]]; then
+            gh api --method POST "/repos/${GITHUB_REPOSITORY}/git/refs" -f ref='refs/heads/frozen/v4.09' -f sha="$sha"
+          fi
+
+      - name: Publish GitHub and HACS Dashboard release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$VERSION already exists; verifying target only."
+          else
+            gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --target "$sha" --title 'Gewitterradar Dashboard V4.09' --notes-file RELEASE_NOTES_V4_09.md --latest
+          fi
+
+      - name: Verify published Dashboard release target
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          git fetch origin "refs/tags/${VERSION}:refs/tags/${VERSION}" --force
+          test "$(git rev-list -n1 "$VERSION")" = "$sha"
+          test "$(gh api "/repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" --jq '.target_commitish')" = "$sha"
+          test "$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/heads/frozen/v4.09" --jq '.object.sha')" = "$sha"
