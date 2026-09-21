@@ -12,8 +12,8 @@
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Dashboard-41BDF5?logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Dashboard-41BDF5)
-![Version](https://img.shields.io/badge/Gewitterradar-V4.08-c9a45b)
-![Stable](https://img.shields.io/badge/Public%20Stable-V4.08-lightgrey)
+![Version](https://img.shields.io/badge/Gewitterradar-V4.09-c9a45b)
+![Stable](https://img.shields.io/badge/Public%20Stable-V4.09-lightgrey)
 
 </div>
 
@@ -535,7 +535,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 </tr>
 <tr>
 <td><strong>Release Notes</strong></td>
-<td><a href="RELEASE_NOTES_V4_08.md">RELEASE_NOTES_V4_08.md</a></td>
+<td><a href="RELEASE_NOTES_V4_09.md">RELEASE_NOTES_V4_09.md</a></td>
 </tr>
 </table>
 
@@ -546,7 +546,7 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 
 <br>
 
-Aktueller öffentlicher Dashboard-Stand: **V4.08**
+Aktueller öffentlicher Dashboard-Stand: **V4.09**
 
 Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonischen Gewitterradar-Projekts:
 
@@ -554,22 +554,22 @@ Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonisch
 TheDaimos/gewitterradar
 ```
 
-Kanonischer V4.08-Commit: `27da94e5043a365dbe8ea5c5e2224327165750fa`
+Kanonischer V4.09-Commit: `a6a5b68ebc289f04217bc5abb55c46422dce4e4c`
 
-V4.08-Payload-Identitäten:
+V4.09-Payload-Identitäten:
 
 ```text
 dist/gewitterradar.js
-SHA256: b75390652fae4aa98c77162fb207d97ece408ab617bbf107bcb0f3b9466a691f
+SHA256: c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2
 
 dist/locales/about-locales.js
-SHA256: a57493b6291671696aeb87c267595e3ce5fede987546f702d7883ef6f07bd288
+SHA256: dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e
 
 dist/app_gewitterradar_v4_07_pkg.yaml
 SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
 ```
 
-V4.08 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.08-Frontend abgeleitet. Das weiterhin verwendete V4.07-YAML-Package bleibt unverändert; frühere Tags und eingefrorene Release-Branches bleiben unverändert.
+V4.09 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.09-Frontend abgeleitet. Das weiterhin verwendete V4.07-YAML-Package bleibt unverändert; frühere Tags und eingefrorene Release-Branches bleiben unverändert.
 
 </details>
 
