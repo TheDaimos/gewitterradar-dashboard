@@ -1,0 +1,147 @@
+name: Sync Dashboard V4.09 from canonical release
+on:
+  push:
+    branches:
+      - release/v4.09
+    paths:
+      - '.github/workflows/sync-v4.09.yml'
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch canonical Gewitterradar V4.09
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch v4.09 https://github.com/TheDaimos/gewitterradar.git canonical
+          test "$(git -C canonical rev-parse HEAD)" = "a6a5b68ebc289f04217bc5abb55c46422dce4e4c"
+          test "$(stat -c%s canonical/dashboard/dist/gewitterradar.js)" = "2238824"
+          echo "c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2  canonical/dashboard/dist/gewitterradar.js" | sha256sum -c -
+          echo "dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e  canonical/dashboard/dist/locales/about-locales.js" | sha256sum -c -
+
+      - name: Synchronize exact Dashboard distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete canonical/dashboard/dist/ dist/
+          cp canonical/dashboard/hacs.json hacs.json
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          cmp -s canonical/dashboard/dist/gewitterradar.js dist/gewitterradar.js
+          cmp -s canonical/dashboard/dist/locales/about-locales.js dist/locales/about-locales.js
+          test -f dist/assets/gewitterradar-compass-toggle.png
+
+      - name: Update Dashboard release documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > RELEASE_NOTES_V4_09.md <<'EOF'
+          # Gewitterradar Dashboard V4.09 · 2026/09
+
+          V4.09 synchronisiert die Dashboard-/HACS-Auslieferung bytegenau mit dem öffentlichen kanonischen Gewitterradar V4.09.
+
+          ## Neu in V4.09
+
+          - Kartenansichten Standard, Groß und Vollbild mit geräte-/browserbezogener Standardansicht.
+          - Separates Gewitter-Kartenfenster mit aktuell gewählter Karte und Kompass.
+          - Im Vollbild unabhängig ein-/ausblendbare und frei verschiebbare Instrumente für Kompass und Medaillon.
+          - Frei bewegliche Standort-Pille mit adaptivem, responsivem Standortmenü.
+          - Cluster-Auflösung und Cluster-Navigation unter Kartendarstellung.
+          - Finaler viewportbasierter Touch-Scrollbereich für Radien.
+          - Einheitliche ×-Löschschaltflächen für Bezeichnung, Breitengrad und Längengrad.
+          - Kartenansicht und Hilfe über den vollständigen Produktumfang von 19 Sprachvarianten synchronisiert.
+          - Geschützte Medaillon-Diagnose auf das produktive trend-icon begrenzt, damit das zusätzliche Vollbild-Medaillon die Kalibrierung nicht verfälschen kann.
+
+          ## Installation
+
+          - HACS-Repository: TheDaimos/gewitterradar-dashboard als Dashboard.
+          - JavaScript-Modul: /hacsfiles/gewitterradar-dashboard/gewitterradar.js.
+          - Das bestehende V4.07-Package bleibt weiterhin die aktuelle Dashboard-Helferbasis und wird manuell nach /config/packages/app_gewitterradar_v4_07_pkg.yaml kopiert.
+          - V4.09 führt kein neues YAML-Helferpaket ein.
+
+          ## Release-Identität
+
+          - Gewitterradar: V4.09
+          - Frontend: 2.238.824 Bytes
+          - Frontend SHA256: c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2
+          - Locale SHA256: dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e
+          - Kanonischer Produktcommit: a6a5b68ebc289f04217bc5abb55c46422dce4e4c
+          - V4.07-Package SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
+
+          Die Laufzeitdateien dist/gewitterradar.js und dist/locales/about-locales.js sind bytegleich mit der Dashboard-Ausleitung des kanonischen V4.09-Produktcommits.
+
+          Es werden keine benutzerdefinierten GitHub-Release-Artefakte veröffentlicht. HACS installiert weiterhin den vollständigen getaggten dist/-Stand.
+          EOF
+
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('README.md')
+          s=p.read_text(encoding='utf-8')
+          replacements=[
+            ('Gewitterradar-V4.08-c9a45b','Gewitterradar-V4.09-c9a45b'),
+            ('Public%20Stable-V4.08-lightgrey','Public%20Stable-V4.09-lightgrey'),
+            ('RELEASE_NOTES_V4_08.md','RELEASE_NOTES_V4_09.md'),
+            ('Aktueller öffentlicher Dashboard-Stand: **V4.08**','Aktueller öffentlicher Dashboard-Stand: **V4.09**'),
+            ('Kanonischer V4.08-Commit: \x6027da94e5043a365dbe8ea5c5e2224327165750fa\x60','Kanonischer V4.09-Commit: \x60a6a5b68ebc289f04217bc5abb55c46422dce4e4c\x60'),
+            ('V4.08-Payload-Identitäten:','V4.09-Payload-Identitäten:'),
+            ('b75390652fae4aa98c77162fb207d97ece408ab617bbf107bcb0f3b9466a691f','c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2'),
+            ('a57493b6291671696aeb87c267595e3ce5fede987546f702d7883ef6f07bd288','dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e'),
+            ('V4.08 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.08-Frontend abgeleitet.','V4.09 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.09-Frontend abgeleitet.'),
+          ]
+          for old,new in replacements:
+              if old not in s:
+                  raise SystemExit('README marker missing: '+old)
+              s=s.replace(old,new)
+          p.write_text(s,encoding='utf-8',newline='')
+
+          p=Path('CHANGELOG.md')
+          s=p.read_text(encoding='utf-8')
+          block='''## V4.09 · 2026/09 — public Dashboard release
+
+          - Derived the Dashboard/HACS runtime byte-for-byte from canonical Gewitterradar commit a6a5b68ebc289f04217bc5abb55c46422dce4e4c.
+          - Public product version: V4.09, derived from the accepted V4.09.28 line plus the release-gate diagnostic selector correction.
+          - Frontend: 2.238.824 bytes, SHA256 c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2.
+          - External locale: 741.069 bytes, SHA256 dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e.
+          - Adds Standard/Groß/Vollbild map views, separate map window, movable fullscreen instruments/location pill, final radius scrolling and unified coordinate clear controls.
+          - Keeps the existing V4.07 YAML package unchanged, SHA256 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694.
+          - Includes the new runtime asset gewitterradar-compass-toggle.png.
+          - Preserves earlier tags and frozen Dashboard releases unchanged.
+
+          '''
+          if not s.startswith('# Changelog\n\n'):
+              raise SystemExit('unexpected changelog header')
+          if '## V4.09 · 2026/09' not in s:
+              s=s.replace('# Changelog\n\n','# Changelog\n\n'+block,1)
+          p.write_text(s,encoding='utf-8',newline='')
+          PY
+
+      - name: Verify synchronized V4.09 payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check dist/gewitterradar.js
+          test "$(stat -c%s dist/gewitterradar.js)" = "2238824"
+          echo "c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2  dist/gewitterradar.js" | sha256sum -c -
+          echo "dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e  dist/locales/about-locales.js" | sha256sum -c -
+          echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
+          grep -Fq "const CARD_VERSION = '4.09';" dist/gewitterradar.js
+          grep -Fq 'V4.09-RELEASE-2026-09-21' dist/gewitterradar.js
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Commit derived Dashboard V4.09
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf canonical
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'release: derive Dashboard V4.09 from canonical product'
+          git push origin HEAD:release/v4.09
