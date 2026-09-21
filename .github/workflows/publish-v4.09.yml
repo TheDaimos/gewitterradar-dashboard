@@ -46,8 +46,8 @@ jobs:
           echo "$FRONTEND_SHA256  dist/gewitterradar.js" | sha256sum -c -
           echo "$LOCALE_SHA256  dist/locales/about-locales.js" | sha256sum -c -
           echo "1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694  dist/app_gewitterradar_v4_07_pkg.yaml" | sha256sum -c -
-          grep -Fq "const CARD_VERSION = '4.08';" dist/gewitterradar.js
-          grep -Fq 'V4.09-RELEASE-2026-09-18' dist/gewitterradar.js
+          grep -Fq "const CARD_VERSION = '4.09';" dist/gewitterradar.js
+          grep -Fq 'V4.09-RELEASE-2026-09-21' dist/gewitterradar.js
           test -f RELEASE_NOTES_V4_09.md
           test -f dist/assets/gewitterradar-compass-toggle.png
           echo "bd6ce5bbd20a9db8af174f14ff284461c41e0ee620443f5e42b9c298e9072a0a  dist/assets/gewitterradar-compass-toggle.png" | sha256sum -c -
