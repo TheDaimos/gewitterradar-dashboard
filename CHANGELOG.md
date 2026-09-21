@@ -1,5 +1,16 @@
 # Changelog
 
+## V4.09 · 2026/09 — public Dashboard release
+
+- Derived the Dashboard/HACS runtime byte-for-byte from canonical Gewitterradar commit a6a5b68ebc289f04217bc5abb55c46422dce4e4c.
+- Public product version: V4.09, derived from the accepted V4.09.28 line plus the release-gate diagnostic selector correction.
+- Frontend: 2.238.824 bytes, SHA256 c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2.
+- External locale: 741.069 bytes, SHA256 dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e.
+- Adds Standard/Groß/Vollbild map views, separate map window, movable fullscreen instruments/location pill, final radius scrolling and unified coordinate clear controls.
+- Keeps the existing V4.07 YAML package unchanged, SHA256 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694.
+- Includes the new runtime asset gewitterradar-compass-toggle.png.
+- Preserves earlier tags and frozen Dashboard releases unchanged.
+
 ## V4.08 · 2026/09 — public Dashboard release
 
 - Derived the Dashboard/HACS runtime byte-for-byte from canonical Gewitterradar commit `27da94e5043a365dbe8ea5c5e2224327165750fa`.
