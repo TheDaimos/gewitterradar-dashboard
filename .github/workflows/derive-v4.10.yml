@@ -1,0 +1,52 @@
+name: Derive Dashboard V4.10 from canonical public release
+on:
+  push:
+    branches: [release/v4.10]
+    paths: ['docs/archive-triggers/V4_10_SYNC.trigger']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  derive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify canonical V4.10 is already published on expected commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh api repos/TheDaimos/gewitterradar/releases/tags/v4.10 --jq .target_commitish)" = '52466559199bd79e9b6d948d362227797b50a183'
+          test "$(gh api repos/TheDaimos/gewitterradar/git/ref/tags/v4.10 --jq .object.sha)" = '52466559199bd79e9b6d948d362227797b50a183'
+          grep -Fx 'VERSION=V4.10' docs/archive-triggers/V4_10_SYNC.trigger
+      - name: Copy exact canonical Dashboard deliverable and verify every byte
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 --branch v4.10 https://github.com/TheDaimos/gewitterradar.git /tmp/gewitterradar-v410
+          test "$(git -C /tmp/gewitterradar-v410 rev-parse HEAD)" = '52466559199bd79e9b6d948d362227797b50a183'
+          rm -rf dist
+          cp -a /tmp/gewitterradar-v410/dashboard/dist dist
+          cp /tmp/gewitterradar-v410/docs/RELEASE_NOTES_V4_10.md RELEASE_NOTES_V4_10.md
+          cp /tmp/gewitterradar-v410/docs/HISTORY.md docs/HISTORY.md
+          cp /tmp/gewitterradar-v410/docs/MILESTONES.md docs/MILESTONES.md
+          sed -i 's/Gewitterradar-V4.09-/Gewitterradar-V4.10-/g; s/Public%20Stable-V4.09-/Public%20Stable-V4.10-/g' README.md
+          grep '  dashboard/dist/' /tmp/gewitterradar-v410/SHA256SUMS_FRONTEND.txt | sed 's#  dashboard/dist/#  dist/#' > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          test "$(stat -c%s dist/gewitterradar.js)" = 8739
+          echo '62f692b07e1bda236b956d9254215da0762396e67606297cfa52e6c26b20704e  dist/gewitterradar.js' | sha256sum -c -
+          echo 'dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e  dist/locales/about-locales.js' | sha256sum -c -
+          diff -u <(cd /tmp/gewitterradar-v410/dashboard/dist && find . -type f | sort) <(cd dist && find . -type f | sort)
+          git diff --check
+      - name: Commit byte-identical derived files on release branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A dist SHA256SUMS.txt README.md docs/HISTORY.md docs/MILESTONES.md RELEASE_NOTES_V4_10.md
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
+          git commit -m 'release: derive byte-identical Dashboard V4.10 from canonical tag'
+          git push origin HEAD:refs/heads/release/v4.10
