@@ -1,0 +1,65 @@
+name: Publish Dashboard V4.10
+on:
+  push:
+    branches: [main]
+    paths: ['docs/archive-triggers/V4_10_PUBLISH.trigger']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify canonical publication and exact Dashboard payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(gh api repos/TheDaimos/gewitterradar/releases/tags/v4.10 --jq .target_commitish)" = '52466559199bd79e9b6d948d362227797b50a183'
+          test "$(gh api repos/TheDaimos/gewitterradar/git/ref/tags/v4.10 --jq .object.sha)" = '52466559199bd79e9b6d948d362227797b50a183'
+          grep -Fx 'VERSION=V4.10' docs/archive-triggers/V4_10_PUBLISH.trigger
+          grep -Fq "const CARD_VERSION = '4.10';" dist/gewitterradar.js
+          grep -Fq 'V4.10-RELEASE-2026-09-30' dist/gewitterradar.js
+          test "$(stat -c%s dist/gewitterradar.js)" = 8739
+          echo '62f692b07e1bda236b956d9254215da0762396e67606297cfa52e6c26b20704e  dist/gewitterradar.js' | sha256sum -c -
+          echo 'dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e  dist/locales/about-locales.js' | sha256sum -c -
+          test -f dist/module-manifest.js
+          sha256sum -c SHA256SUMS.txt
+      - name: Wait for post-merge Dashboard validation of exact main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 120); do
+            data="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?head_sha=${GITHUB_SHA}&per_page=100")"
+            row="$(printf '%s' "$data" | jq -r '[.workflow_runs[] | select(.name=="Validate HACS Dashboard V4.10")] | sort_by(.created_at) | last | if . == null then "missing" else (.status + ":" + (.conclusion // "")) end')"
+            echo "Dashboard CI: $row"
+            case "$row" in completed:success) exit 0 ;; completed:*) exit 1 ;; esac
+            sleep 15
+          done
+          exit 1
+      - name: Freeze exact Dashboard release and publish GitHub/HACS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          if git ls-remote --exit-code --heads origin refs/heads/frozen/v4.10 >/dev/null 2>&1; then
+            test "$(git ls-remote --heads origin refs/heads/frozen/v4.10 | cut -f1)" = "$sha"
+          else
+            git push origin "$sha:refs/heads/frozen/v4.10"
+          fi
+          if gh release view v4.10 >/dev/null 2>&1; then
+            git fetch origin refs/tags/v4.10:refs/tags/v4.10 --force
+            test "$(git rev-list -n1 v4.10)" = "$sha"
+          else
+            gh release create v4.10 --target "$sha" --title 'Gewitterradar Dashboard V4.10' --notes-file RELEASE_NOTES_V4_10.md --latest
+          fi
+          git fetch origin refs/tags/v4.10:refs/tags/v4.10 --force
+          test "$(git rev-list -n1 v4.10)" = "$sha"
+          gh release view v4.10 --json tagName,isDraft,isPrerelease,url,targetCommitish
