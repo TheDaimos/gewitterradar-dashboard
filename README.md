@@ -1,3 +1,14 @@
+**Originalentwicklung und ursprünglicher Urheber: Christian Köhler**
+
+> **V4.10 FINAL · Gemeinschaftslizenz Modell B · Lizenzedition 2026-11-09.**
+> Einzige aktuelle stabile offizielle Veröffentlichung: [v4.10-model-b](https://github.com/TheDaimos/gewitterradar/releases/tag/v4.10-model-b).
+> Anwendungscode, Frontend und Assets entsprechen dem freigegebenen V4.10-Golden-Master; native Integration **0.22.0**.
+> Dashboard: [V4.10 FINAL](https://github.com/TheDaimos/gewitterradar-dashboard/releases/tag/v4.10-model-b).
+> Frühere rechtmäßig gewährte GPL-Rechte bleiben bestehen; historische Fassungen werden nicht rückwirkend umlizenziert.
+> V4.11 DEV bleibt über den bestehenden DRA-Kanal `deploy/dev` verfügbar.
+> [Lizenz](LICENSE.md) · [Installationsanleitung](https://github.com/TheDaimos/gewitterradar/blob/main/docs/INSTALLATION.md).
+> Modell B ist keine OSI-anerkannte Lizenz: keine offizielle HACS-Katalog-Lizenzfreigabe. Benutzerdefinierte Repositories und manuelle Installation sind getrennte Wege.
+
 <div align="center">
 
 <img src="https://raw.githubusercontent.com/TheDaimos/gewitterradar-dashboard/main/dist/assets/gewitterradar-brand-icon.png" width="170" alt="Gewitterradar Logo">
@@ -12,8 +23,8 @@
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Dashboard-41BDF5?logo=home-assistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Dashboard-41BDF5)
-![Version](https://img.shields.io/badge/Gewitterradar-V4.09-c9a45b)
-![Stable](https://img.shields.io/badge/Public%20Stable-V4.09-lightgrey)
+![Version](https://img.shields.io/badge/Gewitterradar-V4.10-c9a45b)
+![Stable](https://img.shields.io/badge/Public%20Stable-V4.10-lightgrey)
 
 </div>
 
@@ -535,46 +546,20 @@ Weitere Informationen: **[`docs/REPOSITORY_RENAME.md`](docs/REPOSITORY_RENAME.md
 </tr>
 <tr>
 <td><strong>Release Notes</strong></td>
-<td><a href="RELEASE_NOTES_V4_09.md">RELEASE_NOTES_V4_09.md</a></td>
+<td><a href="RELEASE_NOTES_V4_10.md">RELEASE_NOTES_V4_10.md</a></td>
 </tr>
 </table>
 
 ---
 
-<details>
-<summary><strong>Entwicklungs-, Prüf- und Release-Informationen</strong></summary>
+# Gewitterradar V4.10 FINAL – Dashboard-Auslieferung
 
-<br>
+Originalentwicklung und ursprünglicher Urheber: **Christian Köhler**.
 
-Aktueller öffentlicher Dashboard-Stand: **V4.09**
+Diese Auslieferung stammt bytegleich aus dem freigegebenen V4.10-Golden-Master des kanonischen Projekts. Lizenzedition 2026-11-09: [Gemeinschaftslizenz Modell B](https://github.com/TheDaimos/gewitterradar/blob/v4.10-model-b/LICENSE.md).
 
-Dieses Repository ist die abgeleitete Dashboard-/HACS-Auslieferung des kanonischen Gewitterradar-Projekts:
+Die vollständige Laufzeit liegt in `dist/`: `gewitterradar.js`, alle Assets, Locales und Module gemeinsam installieren. Die Dashboard-Variante verwendet weiterhin `app_gewitterradar_v4_07_pkg.yaml`; diese Paketbezeichnung ist keine Produktversionsnummer. Nur dieses Package aktivieren, V4.06 nicht parallel laden. Native Installationen benötigen kein Legacy-Package.
 
-```text
-TheDaimos/gewitterradar
-```
+Veröffentlichung: [V4.10 FINAL](https://github.com/TheDaimos/gewitterradar-dashboard/releases/tag/v4.10-model-b). Vollständige [Installationsanleitung](https://github.com/TheDaimos/gewitterradar/blob/main/docs/INSTALLATION.md), einschließlich manueller nativer Installation und HACS-Custom-Repositories. Keine offizielle HACS-Katalog-Lizenzfreigabe und kein Nachweis einer realen Neuinstallation.
 
-Kanonischer V4.09-Commit: `a6a5b68ebc289f04217bc5abb55c46422dce4e4c`
-
-V4.09-Payload-Identitäten:
-
-```text
-dist/gewitterradar.js
-SHA256: c9f01617d3a19519ecc44f84a7bf71aa3056dee57245af860becd893c652fce2
-
-dist/locales/about-locales.js
-SHA256: dc6506291dd4cfe75e3b9c829fb42f21062511fb574d335af438e6c42711802e
-
-dist/app_gewitterradar_v4_07_pkg.yaml
-SHA256: 1b705c5686e6a7be6dfb36717903df551d4f9f93787c39bd12bddf00aefae694
-```
-
-V4.09 ist bytegleich aus dem exakt veröffentlichten kanonischen Gewitterradar-V4.09-Frontend abgeleitet. Das weiterhin verwendete V4.07-YAML-Package bleibt unverändert; frühere Tags und eingefrorene Release-Branches bleiben unverändert.
-
-</details>
-
----
-
-# Lizenz
-
-Für dieses abgeleitete Dashboard-Repository wurde bislang keine separate Softwarelizenz ausgewählt. Bis eine Lizenz ergänzt wird, gelten die üblichen urheberrechtlichen Standardregeln für den Repository-Inhaber.
+Manuell: den gesamten Inhalt von `dist/` nach `/config/www/gewitterradar/` kopieren, `app_gewitterradar_v4_07_pkg.yaml` zusätzlich nach `/config/packages/` kopieren und Packages gemäß Anleitung aktivieren. Ressource `/local/gewitterradar/gewitterradar.js` als JavaScript-Modul eintragen; nur eine Gewitterradar-Ressource aktiv halten. Vollständigen erforderlichen Quellcode liefert das kanonische Release-Quellarchiv kostenlos mit.
